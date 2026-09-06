@@ -5,6 +5,7 @@ import { AquaApp } from "@1inch/aqua/src/AquaApp.sol";
 import { IAqua } from "@1inch/aqua/src/interfaces/IAqua.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IPriceOracle } from "./MockPriceOracle.sol";
 
 /// @title PerpAquaApp
@@ -12,6 +13,8 @@ import { IPriceOracle } from "./MockPriceOracle.sol";
 /// @dev Counter-margin is just-in-time sourced from maker wallets holding Aave aTokens via Aqua.
 contract PerpAquaApp is AquaApp {
     using SafeERC20 for IERC20;
+    using SafeCast for uint256;
+    using SafeCast for int256;
 
     // --- STRUCTS ---
 
@@ -183,9 +186,22 @@ contract PerpAquaApp is AquaApp {
     /// @notice Registers and validates an LP strategy locally
     /// @param strategy The strategy parameters shipped by the LP
     /// @return strategyHash The keccak256 hash matching Aqua's ship() strategyHash
-    function registerStrategy(Strategy calldata strategy) external pure returns (bytes32) {
-        strategy; // silence unused parameter warning in stub
-        revert("not implemented");
+    function registerStrategy(Strategy calldata strategy) external returns (bytes32 strategyHash) {
+        if (strategy.lp == address(0)) revert ZeroAddress();
+        if (strategy.maxLeverage == 0) revert InvalidLeverage();
+        if (strategy.maxNotional == 0) revert InvalidNotional();
+
+        strategyHash = keccak256(abi.encode(strategy));
+        registeredStrategies[strategyHash] = strategy;
+
+        emit StrategyRegistered(
+            strategyHash,
+            strategy.lp,
+            strategy.maxNotional,
+            strategy.maxLeverage,
+            strategy.spreadBps,
+            strategy.sideMask
+        );
     }
 
     // --- CORE LIFECYCLE FUNCTION STUBS ---
@@ -233,7 +249,7 @@ contract PerpAquaApp is AquaApp {
         revert("not implemented");
     }
 
-    // --- VIEW / PURE HELPER STUBS ---
+    // --- VIEW / PURE HELPER FUNCTIONS ---
 
     /// @notice Fetches position record by id
     function getPosition(uint256 positionId) external view returns (Position memory) {
@@ -242,25 +258,89 @@ contract PerpAquaApp is AquaApp {
 
     /// @notice Computes required trader deposit (margin + spread fee)
     function getRequiredTraderMargin(uint256 notional, uint256 leverage, uint256 spreadBps) public pure returns (uint256) {
-        notional; leverage; spreadBps;
-        revert("not implemented");
+        if (leverage == 0) revert InvalidLeverage();
+        uint256 traderMargin = notional / leverage;
+        uint256 spreadFee = (notional * spreadBps) / BPS_BASE;
+        return traderMargin + spreadFee;
     }
 
     /// @notice Computes required LP counter-margin to pull via Aqua
     function getRequiredLpMargin(uint256 notional, uint256 leverage) public pure returns (uint256) {
-        notional; leverage;
-        revert("not implemented");
+        if (leverage == 0) revert InvalidLeverage();
+        return notional / leverage;
+    }
+
+    /// @notice Computes fill price adjusting index price by LP spread
+    function getFillPrice(uint256 indexPrice, bool isLong, uint256 spreadBps) public pure returns (uint256) {
+        uint256 spreadAdjustment = (indexPrice * spreadBps) / BPS_BASE;
+        return isLong ? indexPrice + spreadAdjustment : indexPrice - spreadAdjustment;
+    }
+
+    /// @notice Calculates realized PnL of trader
+    function calculatePnl(bool isLong, uint256 notional, uint256 entryPrice, uint256 currentPrice) public pure returns (int256) {
+        if (entryPrice == 0) return 0;
+        if (isLong) {
+            if (currentPrice >= entryPrice) {
+                return ((notional * (currentPrice - entryPrice)) / entryPrice).toInt256();
+            } else {
+                return -((notional * (entryPrice - currentPrice)) / entryPrice).toInt256();
+            }
+        } else {
+            if (currentPrice <= entryPrice) {
+                return ((notional * (entryPrice - currentPrice)) / entryPrice).toInt256();
+            } else {
+                return -((notional * (currentPrice - entryPrice)) / entryPrice).toInt256();
+            }
+        }
     }
 
     /// @notice Evaluates current skew-based funding rate and payment direction
-    function getFundingRate(uint256 elapsedSeconds) public pure returns (int256, bool) {
-        elapsedSeconds;
-        revert("not implemented");
+    function getFundingRate(uint256 elapsedSeconds) public view returns (uint256 rateBps, bool longPaysShort) {
+        uint256 totalOi = totalLongOi + totalShortOi;
+        if (totalOi == 0 || elapsedSeconds == 0) {
+            return (0, false);
+        }
+
+        uint256 skewBps;
+        if (totalLongOi >= totalShortOi) {
+            longPaysShort = true;
+            skewBps = ((totalLongOi - totalShortOi) * BPS_BASE) / totalOi;
+        } else {
+            longPaysShort = false;
+            skewBps = ((totalShortOi - totalLongOi) * BPS_BASE) / totalOi;
+        }
+
+        rateBps = (skewBps * MAX_FUNDING_RATE_BPS * elapsedSeconds) / (FUNDING_INTERVAL * BPS_BASE);
+        if (rateBps > MAX_FUNDING_RATE_BPS) {
+            rateBps = MAX_FUNDING_RATE_BPS;
+        }
     }
 
     /// @notice Checks if a position is eligible for liquidation
-    function isLiquidatable(uint256 positionId) public pure returns (bool, bool) {
-        positionId;
-        revert("not implemented");
+    function isLiquidatable(uint256 positionId) public view returns (bool liquidatable, bool viaFundingDefault) {
+        Position storage pos = positions[positionId];
+        if (!pos.isOpen) return (false, false);
+
+        if (pos.fundingDefaulted) {
+            return (true, true);
+        }
+
+        uint256 currentPrice = oracle.getPrice(address(COLLATERAL_TOKEN));
+        int256 pnl = calculatePnl(pos.isLong, pos.notional, pos.entryPrice, currentPrice);
+        uint256 maintenanceReq = (pos.notional * MAINTENANCE_MARGIN_BPS) / BPS_BASE;
+
+        if (pnl < 0) {
+            uint256 traderLoss = (-pnl).toUint256();
+            if (traderLoss >= pos.traderMargin) return (true, false);
+            uint256 remainingTraderMargin = pos.traderMargin - traderLoss;
+            if (remainingTraderMargin < maintenanceReq) return (true, false);
+        } else if (pnl > 0) {
+            uint256 lpLoss = pnl.toUint256();
+            if (lpLoss >= pos.lpMargin) return (true, false);
+            uint256 remainingLpMargin = pos.lpMargin - lpLoss;
+            if (remainingLpMargin < maintenanceReq) return (true, false);
+        }
+
+        return (false, false);
     }
 }
