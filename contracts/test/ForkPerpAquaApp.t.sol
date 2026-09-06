@@ -292,4 +292,143 @@ contract ForkPerpAquaAppTest is Test {
         assertTrue(liquidatable, "Must be liquidatable");
         assertTrue(viaDefault, "Must be liquidatable via funding default");
     }
+
+    /// @notice Scenario 6: Liquidation via margin breach
+    /// Oracle price moves against trader beyond maintenance margin (5%) -> keeper liquidates, receives 1% fee, remainder settled
+    function test_Fork_Scenario6_Liquidation_MarginBreach() public {
+        _shipDefaultQuote(10_000e6);
+
+        // Trader opens Long of 10,000 Notional at 10x leverage ($1,000 margin)
+        vm.startPrank(trader);
+        aUsdc.approve(address(app), type(uint256).max);
+        uint256 posId = app.openPosition(defaultStrategy, true, 10_000e6, 10);
+        vm.stopPrank();
+
+        // Move oracle price down 6% (from $60,000 to $56,400)
+        // Trader loss is ~600 USDC, leaving ~400 margin < 500 USDC (5% maintenance requirement)
+        oracle.setPrice(A_USDC, 56_400e18);
+
+        (bool liquidatable, bool viaDefault) = app.isLiquidatable(posId);
+        assertTrue(liquidatable, "Position must be liquidatable");
+        assertFalse(viaDefault, "Must not be via funding default");
+
+        uint256 keeperPreBalance = aUsdc.balanceOf(keeper);
+        uint256 traderPreBalance = aUsdc.balanceOf(trader);
+        uint256 lpPreBalance = aUsdc.balanceOf(lp);
+
+        // Ronald (keeper) liquidates the position
+        vm.prank(keeper);
+        uint256 reward = app.liquidate(posId);
+
+        uint256 keeperPostBalance = aUsdc.balanceOf(keeper);
+        uint256 traderPostBalance = aUsdc.balanceOf(trader);
+        uint256 lpPostBalance = aUsdc.balanceOf(lp);
+
+        // Keeper fee: 1% of 10,000 notional = 100 aUSDC
+        assertEq(reward, 100e6, "Keeper reward mismatch");
+        assertApproxEqAbs(keeperPostBalance - keeperPreBalance, 100e6, 2, "Keeper balance mismatch");
+
+        // Trader receives remaining margin minus keeper fee
+        assertTrue(traderPostBalance > traderPreBalance, "Trader should receive remaining margin");
+        // LP receives counter-margin + profit from trader's loss
+        assertTrue(lpPostBalance > lpPreBalance + 1_000e6, "LP should receive margin + profit");
+
+        // Position is closed and OI decremented
+        PerpAquaApp.Position memory pos = app.getPosition(posId);
+        assertFalse(pos.isOpen, "Position must be closed");
+        assertEq(app.totalLongOi(), 0, "Long OI must be decremented to 0");
+    }
+
+    /// @notice Scenario 7: Liquidation via funding default
+    /// LP funding default triggers liquidation eligibility even when margin is healthy -> keeper liquidates via default path
+    function test_Fork_Scenario7_Liquidation_FundingDefault() public {
+        _shipDefaultQuote(10_000e6);
+
+        // Setup Long (10k) and Short (30k) positions so LP owes trader
+        vm.startPrank(trader);
+        aUsdc.approve(address(app), type(uint256).max);
+        uint256 posId1 = app.openPosition(defaultStrategy, true, 10_000e6, 5);
+        vm.stopPrank();
+
+        vm.startPrank(trader2);
+        aUsdc.approve(address(app), type(uint256).max);
+        app.openPosition(defaultStrategy, false, 30_000e6, 5);
+        vm.stopPrank();
+
+        // LP drains wallet below funding requirement
+        vm.prank(lp);
+        aUsdc.transfer(address(0xdead), 11_990e6);
+
+        // Advance past funding interval and settle funding (trigger default)
+        vm.warp(block.timestamp + 8 hours + 1);
+        vm.prank(keeper);
+        app.settleFunding(posId1);
+
+        // Oracle price has NOT moved -> margin is 100% healthy, yet liquidatable via funding default
+        (bool liquidatable, bool viaDefault) = app.isLiquidatable(posId1);
+        assertTrue(liquidatable, "Must be liquidatable");
+        assertTrue(viaDefault, "Must be via funding default");
+
+        uint256 keeperPreBalance = aUsdc.balanceOf(keeper);
+        uint256 traderPreBalance = aUsdc.balanceOf(trader);
+
+        // Keeper liquidates via default path
+        vm.prank(keeper);
+        uint256 reward = app.liquidate(posId1);
+
+        uint256 keeperPostBalance = aUsdc.balanceOf(keeper);
+        uint256 traderPostBalance = aUsdc.balanceOf(trader);
+
+        // Keeper receives 100 aUSDC reward from defaulting LP's held margin
+        assertEq(reward, 100e6, "Keeper reward mismatch");
+        assertApproxEqAbs(keeperPostBalance - keeperPreBalance, 100e6, 2, "Keeper balance mismatch");
+        // Trader receives margin adjusted for entry spread PnL (~1,990 USDC)
+        assertApproxEqAbs(traderPostBalance - traderPreBalance, 1_990e6, 1e6, "Trader should receive margin adjusted for entry spread");
+
+        PerpAquaApp.Position memory pos = app.getPosition(posId1);
+        assertFalse(pos.isOpen, "Position must be closed");
+    }
+
+    /// @notice Scenario 8: Voluntary close
+    /// Normal trade lifecycle: trader opens, price moves favorably (+10%), trader closes and both receive correct payout directly
+    function test_Fork_Scenario8_VoluntaryClose() public {
+        _shipDefaultQuote(10_000e6);
+
+        // Trader opens Long of 10,000 Notional at 5x leverage (2,000 margin, entry price 60,060)
+        vm.startPrank(trader);
+        aUsdc.approve(address(app), type(uint256).max);
+        uint256 posId = app.openPosition(defaultStrategy, true, 10_000e6, 5);
+        vm.stopPrank();
+
+        // Non-trader cannot close position
+        vm.prank(keeper);
+        vm.expectRevert(PerpAquaApp.OnlyTrader.selector);
+        app.closePosition(posId);
+
+        // Oracle price increases +10% (from $60,000 to $66,066) -> +$1,000 profit
+        oracle.setPrice(A_USDC, 66_066e18);
+
+        uint256 traderPreBalance = aUsdc.balanceOf(trader);
+        uint256 lpPreBalance = aUsdc.balanceOf(lp);
+
+        vm.prank(trader);
+        (int256 pnl, uint256 traderPayout, uint256 lpPayout) = app.closePosition(posId);
+
+        uint256 traderPostBalance = aUsdc.balanceOf(trader);
+        uint256 lpPostBalance = aUsdc.balanceOf(lp);
+
+        // Assert +1,000 PnL
+        assertApproxEqAbs(uint256(pnl), 1_000e6, 5e6, "PnL mismatch");
+        // Trader receives 2,000 margin + 1,000 profit = ~3,000 USDC
+        assertApproxEqAbs(traderPayout, 3_000e6, 5e6, "Trader payout mismatch");
+        assertApproxEqAbs(traderPostBalance - traderPreBalance, traderPayout, 2, "Trader balance mismatch");
+        // LP receives 2,000 margin - 1,000 loss = ~1,000 USDC directly to wallet
+        assertApproxEqAbs(lpPayout, 1_000e6, 5e6, "LP payout mismatch");
+        assertApproxEqAbs(lpPostBalance - lpPreBalance, lpPayout, 2, "LP balance mismatch");
+
+        // Position is closed and OI is 0
+        PerpAquaApp.Position memory pos = app.getPosition(posId);
+        assertFalse(pos.isOpen, "Position must be closed");
+        assertEq(app.totalLongOi(), 0, "Long OI must be 0");
+    }
 }
