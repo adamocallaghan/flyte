@@ -431,4 +431,61 @@ contract ForkPerpAquaAppTest is Test {
         assertFalse(pos.isOpen, "Position must be closed");
         assertEq(app.totalLongOi(), 0, "Long OI must be 0");
     }
+
+    /// @notice Scenario 9: aToken rebasing correctness
+    /// Advance time so Aave yield accrues on aUSDC held by contract; assert accounting doesn't leak or double-count accrued yield
+    function test_Fork_Scenario9_ATokenRebasingCorrectness() public {
+        _shipDefaultQuote(10_000e6);
+
+        // Trader opens Long of 10,000 Notional at 5x leverage:
+        // traderMargin = 2,000e6, spreadFee = 10e6, lpMargin = 2,000e6
+        vm.startPrank(trader);
+        aUsdc.approve(address(app), type(uint256).max);
+        uint256 posId = app.openPosition(defaultStrategy, true, 10_000e6, 5);
+        vm.stopPrank();
+
+        uint256 initialAppBalance = aUsdc.balanceOf(address(app));
+        // Total deposited: 2,000 (trader) + 10 (spread) + 2,000 (LP) = 4,010 aUSDC
+        assertApproxEqAbs(initialAppBalance, 4_010e6, 2, "Initial balance mismatch");
+
+        // Advance time 180 days into the future to accrue Aave lending yield
+        vm.warp(block.timestamp + 180 days);
+        vm.roll(block.number + (180 days / 12));
+
+        uint256 accruedAppBalance = aUsdc.balanceOf(address(app));
+        // Verify that Aave rebasing increased the aToken balance of the contract
+        assertTrue(accruedAppBalance > initialAppBalance, "Aave yield should have accrued to contract");
+        uint256 accruedYield = accruedAppBalance - initialAppBalance;
+
+        // Set oracle price to break-even entry price ($60,060) so PnL = 0
+        oracle.setPrice(A_USDC, 60_060e18);
+
+        uint256 traderPreBalance = aUsdc.balanceOf(trader);
+        uint256 lpPreBalance = aUsdc.balanceOf(lp);
+
+        vm.prank(trader);
+        (int256 pnl, uint256 traderPayout, uint256 lpPayout) = app.closePosition(posId);
+
+        uint256 traderPostBalance = aUsdc.balanceOf(trader);
+        uint256 lpPostBalance = aUsdc.balanceOf(lp);
+        uint256 finalAppBalance = aUsdc.balanceOf(address(app));
+
+        // PnL should be zero at entry price
+        assertEq(pnl, 0, "PnL must be zero");
+        // Trader must receive exactly their nominal margin (2,000 USDC), no leak of yield
+        assertApproxEqAbs(traderPayout, 2_000e6, 2, "Trader payout must equal nominal margin");
+        assertApproxEqAbs(traderPostBalance - traderPreBalance, 2_000e6, 2, "Trader balance diff mismatch");
+        // LP must receive exactly their nominal counter-margin (2,000 USDC), no leak of yield
+        assertApproxEqAbs(lpPayout, 2_000e6, 2, "LP payout must equal nominal margin");
+        assertApproxEqAbs(lpPostBalance - lpPreBalance, 2_000e6, 2, "LP balance diff mismatch");
+
+        // Contract must retain the collected spread fee + all accrued Aave interest as surplus
+        assertApproxEqAbs(finalAppBalance, 10e6 + accruedYield, 2, "Remaining balance must equal fee + yield");
+        assertTrue(finalAppBalance >= 10e6, "Contract must remain fully solvent");
+
+        // Position is closed and OI is 0
+        PerpAquaApp.Position memory pos = app.getPosition(posId);
+        assertFalse(pos.isOpen, "Position must be closed");
+        assertEq(app.totalLongOi(), 0, "Long OI must be 0");
+    }
 }
