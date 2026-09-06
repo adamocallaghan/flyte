@@ -390,15 +390,135 @@ contract PerpAquaApp is AquaApp {
     }
 
     /// @notice Liquidates an underwater position or one in funding default
-    function liquidate(uint256 positionId) external pure returns (uint256) {
-        positionId;
-        revert("not implemented");
+    function liquidate(uint256 positionId)
+        external
+        whenNotPaused
+        nonReentrantStrategy(positions[positionId].lp, positions[positionId].strategyHash)
+        returns (uint256 reward)
+    {
+        Position storage pos = positions[positionId];
+        if (!pos.isOpen) revert PositionNotOpen();
+
+        (bool liquidatable, bool viaFundingDefault) = isLiquidatable(positionId);
+        if (!liquidatable) revert NotLiquidatable();
+
+        pos.isOpen = false;
+        if (pos.isLong) {
+            totalLongOi -= pos.notional;
+        } else {
+            totalShortOi -= pos.notional;
+        }
+
+        uint256 currentPrice = oracle.getPrice(address(COLLATERAL_TOKEN));
+        int256 pnl = calculatePnl(pos.isLong, pos.notional, pos.entryPrice, currentPrice);
+
+        uint256 traderBalance;
+        uint256 lpBalance;
+
+        if (pnl > 0) {
+            uint256 profit = pnl.toUint256();
+            if (profit > pos.lpMargin) profit = pos.lpMargin;
+            traderBalance = pos.traderMargin + profit;
+            lpBalance = pos.lpMargin - profit;
+        } else if (pnl < 0) {
+            uint256 loss = (-pnl).toUint256();
+            if (loss > pos.traderMargin) loss = pos.traderMargin;
+            traderBalance = pos.traderMargin - loss;
+            lpBalance = pos.lpMargin + loss;
+        } else {
+            traderBalance = pos.traderMargin;
+            lpBalance = pos.lpMargin;
+        }
+
+        uint256 traderPayout;
+        uint256 lpPayout;
+        reward = (pos.notional * KEEPER_FEE_BPS) / BPS_BASE;
+
+        if (viaFundingDefault) {
+            if (reward > lpBalance) reward = lpBalance;
+            lpPayout = lpBalance - reward;
+            traderPayout = traderBalance;
+        } else if (pnl < 0) {
+            if (reward > traderBalance) reward = traderBalance;
+            traderPayout = traderBalance - reward;
+            lpPayout = lpBalance;
+        } else {
+            if (reward > lpBalance) reward = lpBalance;
+            lpPayout = lpBalance - reward;
+            traderPayout = traderBalance;
+        }
+
+        if (reward > 0) {
+            COLLATERAL_TOKEN.safeTransfer(msg.sender, reward);
+        }
+        if (traderPayout > 0) {
+            COLLATERAL_TOKEN.safeTransfer(pos.trader, traderPayout);
+        }
+        if (lpPayout > 0) {
+            COLLATERAL_TOKEN.safeTransfer(pos.lp, lpPayout);
+        }
+
+        emit PositionLiquidated(
+            positionId,
+            msg.sender,
+            reward,
+            traderPayout,
+            lpPayout,
+            viaFundingDefault
+        );
     }
 
     /// @notice Voluntarily closes an open position at current index price
-    function closePosition(uint256 positionId) external pure returns (int256, uint256, uint256) {
-        positionId;
-        revert("not implemented");
+    function closePosition(uint256 positionId)
+        external
+        whenNotPaused
+        nonReentrantStrategy(positions[positionId].lp, positions[positionId].strategyHash)
+        returns (int256 pnl, uint256 traderPayout, uint256 lpPayout)
+    {
+        Position storage pos = positions[positionId];
+        if (!pos.isOpen) revert PositionNotOpen();
+        if (msg.sender != pos.trader) revert OnlyTrader();
+
+        pos.isOpen = false;
+        if (pos.isLong) {
+            totalLongOi -= pos.notional;
+        } else {
+            totalShortOi -= pos.notional;
+        }
+
+        uint256 currentPrice = oracle.getPrice(address(COLLATERAL_TOKEN));
+        pnl = calculatePnl(pos.isLong, pos.notional, pos.entryPrice, currentPrice);
+
+        if (pnl > 0) {
+            uint256 profit = pnl.toUint256();
+            if (profit > pos.lpMargin) profit = pos.lpMargin;
+            traderPayout = pos.traderMargin + profit;
+            lpPayout = pos.lpMargin - profit;
+        } else if (pnl < 0) {
+            uint256 loss = (-pnl).toUint256();
+            if (loss > pos.traderMargin) loss = pos.traderMargin;
+            traderPayout = pos.traderMargin - loss;
+            lpPayout = pos.lpMargin + loss;
+        } else {
+            traderPayout = pos.traderMargin;
+            lpPayout = pos.lpMargin;
+        }
+
+        if (traderPayout > 0) {
+            COLLATERAL_TOKEN.safeTransfer(pos.trader, traderPayout);
+        }
+        if (lpPayout > 0) {
+            COLLATERAL_TOKEN.safeTransfer(pos.lp, lpPayout);
+        }
+
+        emit PositionClosed(
+            positionId,
+            pos.trader,
+            pos.lp,
+            currentPrice,
+            traderPayout,
+            lpPayout
+        );
     }
 
     // --- VIEW / PURE HELPER FUNCTIONS ---
