@@ -42,8 +42,8 @@ contract SwapVMOpcodesTest is Test {
         bytes memory program = FundingCalc.build(notional, longOi, shortOi, timeElapsed);
         (uint256 amountIn, uint256 amountOut) = router.runPerpProgram(program);
 
-        // totalOi = 40,000e6, skew = 20,000e6, rate = 50 bps, funding = 50e6
-        assertEq(amountIn, 50e6);
+        // totalOi = 40,000e6, skew = 20,000e6, rate = 37 bps, funding = 37e6
+        assertEq(amountIn, 37e6);
         // 1 represents long paying shorts
         assertEq(amountOut, 1);
     }
@@ -57,8 +57,8 @@ contract SwapVMOpcodesTest is Test {
         bytes memory program = FundingCalc.build(notional, longOi, shortOi, timeElapsed);
         (uint256 amountIn, uint256 amountOut) = router.runPerpProgram(program);
 
-        // totalOi = 40,000e6, skew = 20,000e6, rate = 50 bps, scaled = 25 bps, funding = 25e6
-        assertEq(amountIn, 25e6);
+        // totalOi = 40,000e6, skew = 20,000e6, rate = 37 bps, scaled = 18 bps, funding = 18e6
+        assertEq(amountIn, 18e6);
         // 0 represents shorts paying longs
         assertEq(amountOut, 0);
     }

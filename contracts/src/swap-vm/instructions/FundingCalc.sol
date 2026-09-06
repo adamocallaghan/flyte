@@ -17,7 +17,7 @@ library FundingCalc {
     using InstructionBuilder for MemoryPtr;
 
     Opcode constant OPCODE = Opcode._75;
-    uint256 public constant MAX_FUNDING_RATE_BPS = 100; // 1% per 8-hour interval
+    uint256 public constant MAX_FUNDING_RATE_BPS = 75; // 0.75% per 8-hour interval
     uint256 public constant FUNDING_INTERVAL = 8 hours; // 28800 seconds
 
     function sizeOf(uint64, uint64, uint64, uint32) internal pure returns (uint256) {
@@ -73,6 +73,9 @@ library FundingCalc {
         uint256 skew = longPaying ? (uint256(longOi) - uint256(shortOi)) : (uint256(shortOi) - uint256(longOi));
         uint256 rateBps = (skew * MAX_FUNDING_RATE_BPS) / totalOi;
         uint256 scaledRateBps = (rateBps * uint256(timeElapsed)) / FUNDING_INTERVAL;
+        if (scaledRateBps > MAX_FUNDING_RATE_BPS) {
+            scaledRateBps = MAX_FUNDING_RATE_BPS;
+        }
         uint256 fundingAmount = (uint256(notional) * scaledRateBps) / 10_000;
 
         // amountIn: magnitude of funding payment (in collateral token units)

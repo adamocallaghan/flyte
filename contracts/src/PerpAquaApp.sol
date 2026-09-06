@@ -9,6 +9,7 @@ import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IPriceOracle } from "./MockPriceOracle.sol";
 import { PerpSwapVMRouter } from "./swap-vm/routers/PerpSwapVMRouter.sol";
 import { MarginCalc } from "./swap-vm/instructions/MarginCalc.sol";
+import { FundingCalc } from "./swap-vm/instructions/FundingCalc.sol";
 
 /// @title PerpAquaApp
 /// @notice JIT-sourced RFQ Perpetual Futures DEX built on 1inch Aqua & SwapVM
@@ -319,9 +320,73 @@ contract PerpAquaApp is AquaApp {
     // --- OTHER CORE LIFECYCLE FUNCTION STUBS ---
 
     /// @notice Settle discrete funding payment between trader held margin and LP wallet via Aqua
-    function settleFunding(uint256 positionId) external pure returns (int256, bool) {
-        positionId;
-        revert("not implemented");
+    function settleFunding(uint256 positionId)
+        external
+        whenNotPaused
+        nonReentrantStrategy(positions[positionId].lp, positions[positionId].strategyHash)
+        returns (int256 fundingPaid, bool defaulted)
+    {
+        Position storage pos = positions[positionId];
+        if (!pos.isOpen) revert PositionNotOpen();
+
+        uint256 timeElapsed = block.timestamp - pos.lastFundingTimestamp;
+        if (timeElapsed < FUNDING_INTERVAL) revert FundingIntervalNotReached();
+
+        uint256 fundingAmount;
+        bool longPaysShort;
+
+        if (address(swapVmRouter) != address(0)) {
+            bytes memory program = FundingCalc.build(
+                uint64(pos.notional),
+                uint64(totalLongOi),
+                uint64(totalShortOi),
+                uint32(timeElapsed)
+            );
+            uint256 amountOut;
+            (fundingAmount, amountOut) = swapVmRouter.runPerpProgram(program);
+            longPaysShort = (amountOut == 1);
+        } else {
+            (uint256 rateBps, bool lps) = getFundingRate(timeElapsed);
+            fundingAmount = (pos.notional * rateBps) / BPS_BASE;
+            longPaysShort = lps;
+        }
+
+        pos.lastFundingTimestamp = block.timestamp;
+
+        if (fundingAmount == 0) {
+            emit FundingSettled(positionId, 0, false, false, block.timestamp);
+            return (0, false);
+        }
+
+        // Trader owes LP if:
+        // (trader is long AND longs pay shorts) OR (trader is short AND shorts pay longs)
+        bool traderOwesLp = (pos.isLong == longPaysShort);
+
+        if (traderOwesLp) {
+            // Deduct funding from trader margin held in contract, credit LP margin held in contract
+            if (fundingAmount > pos.traderMargin) {
+                fundingAmount = pos.traderMargin;
+            }
+            pos.traderMargin -= fundingAmount;
+            pos.lpMargin += fundingAmount;
+            fundingPaid = -int256(fundingAmount);
+            emit FundingSettled(positionId, fundingPaid, false, false, block.timestamp);
+            return (fundingPaid, false);
+        } else {
+            // LP owes trader: pull from LP via Aqua and credit trader margin held in contract
+            // If pull reverts (e.g. LP drained wallet), catch revert and flag fundingDefaulted
+            try AQUA.pull(pos.lp, pos.strategyHash, address(COLLATERAL_TOKEN), fundingAmount, address(this)) {
+                pos.traderMargin += fundingAmount;
+                fundingPaid = int256(fundingAmount);
+                emit FundingSettled(positionId, fundingPaid, true, false, block.timestamp);
+                return (fundingPaid, false);
+            } catch {
+                pos.fundingDefaulted = true;
+                defaulted = true;
+                emit FundingSettled(positionId, 0, true, true, block.timestamp);
+                return (0, true);
+            }
+        }
     }
 
     /// @notice Liquidates an underwater position or one in funding default
