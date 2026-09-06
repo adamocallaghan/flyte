@@ -84,8 +84,8 @@ contract PerpAquaAppMathTest is Test {
 
         // Simulate Long-skewed OI via storage cheatcode or helper
         // totalLongOi = 30k, totalShortOi = 10k -> imbalance = 20k / 40k = 50% skew
-        vm.store(address(app), bytes32(uint256(4)), bytes32(uint256(30_000e18))); // totalLongOi slot
-        vm.store(address(app), bytes32(uint256(5)), bytes32(uint256(10_000e18))); // totalShortOi slot
+        vm.store(address(app), bytes32(uint256(5)), bytes32(uint256(30_000e18))); // totalLongOi slot
+        vm.store(address(app), bytes32(uint256(6)), bytes32(uint256(10_000e18))); // totalShortOi slot
 
         (uint256 rateBps, bool longPaysShort) = app.getFundingRate(8 hours);
         // 50% * 75 bps * (8h / 8h) = 37 bps

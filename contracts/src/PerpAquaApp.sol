@@ -7,6 +7,8 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IPriceOracle } from "./MockPriceOracle.sol";
+import { PerpSwapVMRouter } from "./swap-vm/routers/PerpSwapVMRouter.sol";
+import { MarginCalc } from "./swap-vm/instructions/MarginCalc.sol";
 
 /// @title PerpAquaApp
 /// @notice JIT-sourced RFQ Perpetual Futures DEX built on 1inch Aqua & SwapVM
@@ -59,6 +61,7 @@ contract PerpAquaApp is AquaApp {
 
     IERC20 public immutable COLLATERAL_TOKEN;
     IPriceOracle public oracle;
+    PerpSwapVMRouter public swapVmRouter;
     address public owner;
     bool public paused;
 
@@ -112,6 +115,7 @@ contract PerpAquaApp is AquaApp {
     );
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event OracleUpdated(address indexed previousOracle, address indexed newOracle);
+    event SwapVmRouterUpdated(address indexed previousRouter, address indexed newRouter);
     event PausedStateChanged(bool isPaused);
 
     // --- CUSTOM ERRORS ---
@@ -174,6 +178,12 @@ contract PerpAquaApp is AquaApp {
         address prev = address(oracle);
         oracle = newOracle;
         emit OracleUpdated(prev, address(newOracle));
+    }
+
+        function setSwapVmRouter(PerpSwapVMRouter newRouter) external onlyOwner {
+        address prev = address(swapVmRouter);
+        swapVmRouter = newRouter;
+        emit SwapVmRouterUpdated(prev, address(newRouter));
     }
 
     function setPaused(bool isPaused) external onlyOwner {
@@ -247,9 +257,16 @@ contract PerpAquaApp is AquaApp {
         if (isLong && (strat.sideMask & 1 == 0)) revert SideNotAllowed();
         if (!isLong && (strat.sideMask & 2 == 0)) revert SideNotAllowed();
 
-        uint256 totalTraderDeposit = getRequiredTraderMargin(notional, leverage, strat.spreadBps);
+        uint256 totalTraderDeposit;
+        uint256 lpMargin;
+        if (address(swapVmRouter) != address(0)) {
+            bytes memory program = MarginCalc.build(uint64(notional), uint16(leverage), uint16(strat.spreadBps));
+            (totalTraderDeposit, lpMargin) = swapVmRouter.runPerpProgram(program);
+        } else {
+            totalTraderDeposit = getRequiredTraderMargin(notional, leverage, strat.spreadBps);
+            lpMargin = getRequiredLpMargin(notional, leverage);
+        }
         uint256 traderMargin = notional / leverage;
-        uint256 lpMargin = getRequiredLpMargin(notional, leverage);
         uint256 indexPrice = oracle.getPrice(strat.collateralToken);
         uint256 entryPrice = getFillPrice(indexPrice, isLong, strat.spreadBps);
 

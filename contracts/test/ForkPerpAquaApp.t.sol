@@ -4,6 +4,7 @@ pragma solidity 0.8.30;
 import { Test } from "forge-std/Test.sol";
 import { PerpAquaApp } from "../src/PerpAquaApp.sol";
 import { MockPriceOracle } from "../src/MockPriceOracle.sol";
+import { PerpSwapVMRouter } from "../src/swap-vm/routers/PerpSwapVMRouter.sol";
 import { IAqua } from "@1inch/aqua/src/interfaces/IAqua.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -25,6 +26,7 @@ contract ForkPerpAquaAppTest is Test {
 
     PerpAquaApp public app;
     MockPriceOracle public oracle;
+    PerpSwapVMRouter public router;
     IAqua public aqua;
     IERC20 public aUsdc;
     IERC20 public usdc;
@@ -47,7 +49,16 @@ contract ForkPerpAquaAppTest is Test {
         oracle = new MockPriceOracle();
         oracle.setPrice(A_USDC, 60_000e18); // e.g. BTC/USD index = $60,000
 
-        app = new PerpAquaApp(aqua, aUsdc, oracle);
+                app = new PerpAquaApp(aqua, aUsdc, oracle);
+
+        router = new PerpSwapVMRouter(
+            AQUA_REGISTRY,
+            0x82aF49447D8a07e3bd95BD0d56f35241523fBab1,
+            address(this),
+            "FlytePerpSwapVM",
+            "1"
+        );
+        app.setSwapVmRouter(router);
 
         // Setup real aTokens via Aave v3 supply on Arbitrum One fork
         _fundWithATokens(lp, 20_000e6);     // 20,000 aUSDC
