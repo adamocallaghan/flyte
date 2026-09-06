@@ -33,6 +33,7 @@ contract ForkPerpAquaAppTest is Test {
 
     address public lp = makeAddr("grimace");
     address public trader = makeAddr("hamburglar");
+    address public trader2 = makeAddr("birdie");
     address public keeper = makeAddr("ronald");
 
     PerpAquaApp.Strategy public defaultStrategy;
@@ -49,7 +50,7 @@ contract ForkPerpAquaAppTest is Test {
         oracle = new MockPriceOracle();
         oracle.setPrice(A_USDC, 60_000e18); // e.g. BTC/USD index = $60,000
 
-                app = new PerpAquaApp(aqua, aUsdc, oracle);
+        app = new PerpAquaApp(aqua, aUsdc, oracle);
 
         router = new PerpSwapVMRouter(
             AQUA_REGISTRY,
@@ -61,9 +62,10 @@ contract ForkPerpAquaAppTest is Test {
         app.setSwapVmRouter(router);
 
         // Setup real aTokens via Aave v3 supply on Arbitrum One fork
-        _fundWithATokens(lp, 20_000e6);     // 20,000 aUSDC
-        _fundWithATokens(trader, 20_000e6); // 20,000 aUSDC
-        _fundWithATokens(keeper, 1_000e6);  // 1,000 aUSDC
+        _fundWithATokens(lp, 20_000e6);      // 20,000 aUSDC
+        _fundWithATokens(trader, 20_000e6);  // 20,000 aUSDC
+        _fundWithATokens(trader2, 20_000e6); // 20,000 aUSDC
+        _fundWithATokens(keeper, 1_000e6);   // 1,000 aUSDC
 
         defaultStrategy = PerpAquaApp.Strategy({
             lp: lp,
@@ -164,5 +166,130 @@ contract ForkPerpAquaAppTest is Test {
         // Verify no position was created and no state modified
         assertEq(app.nextPositionId(), 1);
         assertEq(app.totalLongOi(), 0);
+    }
+
+    /// @notice Scenario 3: Funding settlement, LP owes trader
+    /// Advance time past interval, short-heavy OI skew creates funding favoring long trader -> Aqua pull increases trader margin
+    function test_Fork_Scenario3_Funding_LpOwesTrader() public {
+        _shipDefaultQuote(10_000e6);
+
+        // Position 1: Trader 1 opens Long of 10,000 Notional at 5x ($2,000 margin)
+        vm.startPrank(trader);
+        aUsdc.approve(address(app), type(uint256).max);
+        uint256 posId1 = app.openPosition(defaultStrategy, true, 10_000e6, 5);
+        vm.stopPrank();
+
+        // Position 2: Trader 2 opens Short of 30,000 Notional at 5x ($6,000 margin)
+        vm.startPrank(trader2);
+        aUsdc.approve(address(app), type(uint256).max);
+        app.openPosition(defaultStrategy, false, 30_000e6, 5);
+        vm.stopPrank();
+
+        // Total OI: 10,000 Long, 30,000 Short -> 20,000 Short skew (shorts pay longs)
+        // Rate = 20,000 / 40,000 * 75 bps = 37.5 bps -> 37 bps
+        // For Pos 1 (Long): shorts pay longs -> LP owes Trader: 10,000 * 37 / 10,000 = 37 aUSDC
+
+        // Advance past 8-hour funding interval
+        vm.warp(block.timestamp + 8 hours + 1);
+
+        uint256 lpPreBalance = aUsdc.balanceOf(lp);
+        uint256 appPreBalance = aUsdc.balanceOf(address(app));
+        PerpAquaApp.Position memory prePos = app.getPosition(posId1);
+
+        // Ronald (keeper) triggers settlement
+        vm.prank(keeper);
+        (int256 fundingPaid, bool defaulted) = app.settleFunding(posId1);
+
+        uint256 lpPostBalance = aUsdc.balanceOf(lp);
+        uint256 appPostBalance = aUsdc.balanceOf(address(app));
+        PerpAquaApp.Position memory postPos = app.getPosition(posId1);
+
+        assertEq(fundingPaid, 37e6, "Funding paid mismatch");
+        assertFalse(defaulted, "Should not default");
+        assertEq(postPos.traderMargin, prePos.traderMargin + 37e6, "Trader margin not credited");
+        assertApproxEqAbs(lpPreBalance - lpPostBalance, 37e6, 2, "LP balance not deducted by Aqua");
+        assertApproxEqAbs(appPostBalance - appPreBalance, 37e6, 2, "App balance not credited by Aqua");
+    }
+
+    /// @notice Scenario 4: Funding settlement, trader owes LP
+    /// Advance time past interval, short-heavy OI skew means short trader owes LP -> internal margin transfer only, no Aqua pull
+    function test_Fork_Scenario4_Funding_TraderOwesLp() public {
+        _shipDefaultQuote(10_000e6);
+
+        // Position 1: Long 10,000
+        vm.startPrank(trader);
+        aUsdc.approve(address(app), type(uint256).max);
+        app.openPosition(defaultStrategy, true, 10_000e6, 5);
+        vm.stopPrank();
+
+        // Position 2: Short 30,000 (Trader 2)
+        vm.startPrank(trader2);
+        aUsdc.approve(address(app), type(uint256).max);
+        uint256 posId2 = app.openPosition(defaultStrategy, false, 30_000e6, 5);
+        vm.stopPrank();
+
+        // Total OI: 10,000 Long, 30,000 Short -> 20,000 Short skew (shorts pay longs)
+        // For Pos 2 (Short): shorts pay longs -> Trader owes LP: 30,000 * 37 / 10,000 = 111 aUSDC
+
+        vm.warp(block.timestamp + 8 hours + 1);
+
+        uint256 lpPreBalance = aUsdc.balanceOf(lp);
+        uint256 appPreBalance = aUsdc.balanceOf(address(app));
+        PerpAquaApp.Position memory prePos = app.getPosition(posId2);
+
+        vm.prank(keeper);
+        (int256 fundingPaid, bool defaulted) = app.settleFunding(posId2);
+
+        uint256 lpPostBalance = aUsdc.balanceOf(lp);
+        uint256 appPostBalance = aUsdc.balanceOf(address(app));
+        PerpAquaApp.Position memory postPos = app.getPosition(posId2);
+
+        assertEq(fundingPaid, -111e6, "Funding paid should be negative");
+        assertFalse(defaulted, "Should not default");
+        assertEq(postPos.traderMargin, prePos.traderMargin - 111e6, "Trader margin not deducted");
+        assertEq(postPos.lpMargin, prePos.lpMargin + 111e6, "LP margin not credited");
+        // Internal transfer only: no tokens move in or out of the app
+        assertEq(lpPreBalance, lpPostBalance, "LP external wallet should not change");
+        assertEq(appPreBalance, appPostBalance, "App total balance should not change");
+    }
+
+    /// @notice Scenario 5: Funding default
+    /// LP owes trader funding, but LP drains wallet -> settleFunding does NOT revert, flags fundingDefaulted = true, makes position liquidatable
+    function test_Fork_Scenario5_Funding_DefaultFlagged() public {
+        _shipDefaultQuote(10_000e6);
+
+        // Position 1: Long 10,000
+        vm.startPrank(trader);
+        aUsdc.approve(address(app), type(uint256).max);
+        uint256 posId1 = app.openPosition(defaultStrategy, true, 10_000e6, 5);
+        vm.stopPrank();
+
+        // Position 2: Short 30,000
+        vm.startPrank(trader2);
+        aUsdc.approve(address(app), type(uint256).max);
+        app.openPosition(defaultStrategy, false, 30_000e6, 5);
+        vm.stopPrank();
+
+        // LP drains wallet below required funding amount (transfers out 11_990e6, leaving ~10e6 when 37e6 is needed)
+        vm.prank(lp);
+        aUsdc.transfer(address(0xdead), 11_990e6);
+
+        // Advance past 8-hour interval
+        vm.warp(block.timestamp + 8 hours + 1);
+
+        // Ronald (keeper) calls settleFunding. Must NOT revert despite Aqua pull failing
+        vm.prank(keeper);
+        (int256 fundingPaid, bool defaulted) = app.settleFunding(posId1);
+
+        assertTrue(defaulted, "Default flag must be true");
+        assertEq(fundingPaid, 0, "No funding paid when defaulted");
+
+        PerpAquaApp.Position memory pos = app.getPosition(posId1);
+        assertTrue(pos.fundingDefaulted, "Position record must have fundingDefaulted = true");
+
+        // Verify position is now immediately eligible for liquidation via funding default
+        (bool liquidatable, bool viaDefault) = app.isLiquidatable(posId1);
+        assertTrue(liquidatable, "Must be liquidatable");
+        assertTrue(viaDefault, "Must be liquidatable via funding default");
     }
 }
