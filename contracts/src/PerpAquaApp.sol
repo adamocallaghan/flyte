@@ -204,46 +204,116 @@ contract PerpAquaApp is AquaApp {
         );
     }
 
-    // --- CORE LIFECYCLE FUNCTION STUBS ---
+    // --- CORE LIFECYCLE: OPEN POSITION ---
 
-    /// @notice Opens a perpetual position against a resting LP quote shipped to Aqua
-    /// @param strategyHash The hash of the LP strategy shipped to Aqua
-    /// @param isLong True if trader goes long, false if short
-    /// @param notional Total trade size in nominal collateral units
-    /// @param leverage Target leverage
-    /// @return positionId Unique identifier of the opened position
+    /// @notice Opens a perpetual position against a resting LP quote using strategy struct
+    function openPosition(
+        Strategy calldata strategy,
+        bool isLong,
+        uint256 notional,
+        uint256 leverage
+    ) external whenNotPaused nonReentrantStrategy(strategy.lp, keccak256(abi.encode(strategy))) returns (uint256) {
+        bytes32 strategyHash = keccak256(abi.encode(strategy));
+        if (registeredStrategies[strategyHash].lp == address(0)) {
+            registeredStrategies[strategyHash] = strategy;
+        }
+        return _openPositionInternal(strategyHash, strategy, isLong, notional, leverage);
+    }
+
+    /// @notice Opens a perpetual position against a registered strategy hash
     function openPosition(
         bytes32 strategyHash,
         bool isLong,
         uint256 notional,
         uint256 leverage
     ) external whenNotPaused nonReentrantStrategy(registeredStrategies[strategyHash].lp, strategyHash) returns (uint256) {
-        strategyHash; isLong; notional; leverage;
-        revert("not implemented");
+        Strategy memory strategy = registeredStrategies[strategyHash];
+        if (strategy.lp == address(0)) revert QuoteExpired();
+        return _openPositionInternal(strategyHash, strategy, isLong, notional, leverage);
     }
 
+    function _openPositionInternal(
+        bytes32 strategyHash,
+        Strategy memory strat,
+        bool isLong,
+        uint256 notional,
+        uint256 leverage
+    ) internal returns (uint256 positionId) {
+        if (strat.quoteExpiry != 0 && block.timestamp > strat.quoteExpiry) revert QuoteExpired();
+        if (notional == 0) revert InvalidNotional();
+        if (notional > strat.maxNotional) revert ExceedsMaxNotional();
+        if (leverage == 0 || leverage > strat.maxLeverage) revert ExceedsMaxLeverage();
+
+        if (isLong && (strat.sideMask & 1 == 0)) revert SideNotAllowed();
+        if (!isLong && (strat.sideMask & 2 == 0)) revert SideNotAllowed();
+
+        uint256 totalTraderDeposit = getRequiredTraderMargin(notional, leverage, strat.spreadBps);
+        uint256 traderMargin = notional / leverage;
+        uint256 lpMargin = getRequiredLpMargin(notional, leverage);
+        uint256 indexPrice = oracle.getPrice(strat.collateralToken);
+        uint256 entryPrice = getFillPrice(indexPrice, isLong, strat.spreadBps);
+
+        // 1. Pull trader deposit directly
+        IERC20(strat.collateralToken).safeTransferFrom(msg.sender, address(this), totalTraderDeposit);
+
+        // 2. Pull LP counter-margin via Aqua
+        AQUA.pull(strat.lp, strategyHash, strat.collateralToken, lpMargin, address(this));
+
+        // 3. Write position to storage
+        positionId = nextPositionId++;
+        positions[positionId] = Position({
+            id: positionId,
+            trader: msg.sender,
+            lp: strat.lp,
+            strategyHash: strategyHash,
+            isLong: isLong,
+            notional: notional,
+            leverage: leverage,
+            entryPrice: entryPrice,
+            traderMargin: traderMargin,
+            lpMargin: lpMargin,
+            openTimestamp: block.timestamp,
+            lastFundingTimestamp: block.timestamp,
+            fundingDefaulted: false,
+            isOpen: true
+        });
+
+        // 4. Update aggregate open interest
+        if (isLong) {
+            totalLongOi += notional;
+        } else {
+            totalShortOi += notional;
+        }
+
+        emit PositionOpened(
+            positionId,
+            msg.sender,
+            strat.lp,
+            strategyHash,
+            isLong,
+            notional,
+            leverage,
+            entryPrice,
+            traderMargin,
+            lpMargin
+        );
+    }
+
+    // --- OTHER CORE LIFECYCLE FUNCTION STUBS ---
+
     /// @notice Settle discrete funding payment between trader held margin and LP wallet via Aqua
-    /// @param positionId Identifier of the open position
-    /// @return fundingAmount Amount settled
-    /// @return lpDefaulted True if LP pull failed and position entered funding default
     function settleFunding(uint256 positionId) external pure returns (int256, bool) {
         positionId;
         revert("not implemented");
     }
 
     /// @notice Liquidates an underwater position or one in funding default
-    /// @param positionId Identifier of the position to liquidate
-    /// @return keeperReward Incentive fee transferred to msg.sender
     function liquidate(uint256 positionId) external pure returns (uint256) {
         positionId;
         revert("not implemented");
     }
 
     /// @notice Voluntarily closes an open position at current index price
-    /// @param positionId Identifier of the position to close
-    /// @return traderPnl Realized PnL of trader (+/-)
-    /// @return traderPayout Final tokens transferred to trader
-    /// @return lpPayout Final tokens transferred to LP
     function closePosition(uint256 positionId) external pure returns (int256, uint256, uint256) {
         positionId;
         revert("not implemented");
