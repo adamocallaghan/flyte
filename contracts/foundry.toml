@@ -1,6 +1,21 @@
-[profile.default]
+﻿[profile.default]
 src = "src"
 out = "out"
 libs = ["lib"]
+solc = "0.8.30"
+evm_version = "cancun"
+via_ir = true
+optimizer = true
+optimizer_runs = 1000
+fs_permissions = [
+    { access = "read-write", path = "./" },
+    { access = "read-write", path = "../" }
+]
 
-# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+[rpc_endpoints]
+arbitrum = "https://arb1.arbitrum.io/rpc"
+local = "http://127.0.0.1:8545"
+
+[fmt]
+bracket_spacing = true
+int_types = "long"
