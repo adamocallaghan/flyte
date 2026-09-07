@@ -4,20 +4,17 @@ import React, { useState } from 'react';
 import { Header } from '../components/Header';
 import { MarketStatsBar } from '../components/MarketStatsBar';
 import { PriceController } from '../components/PriceController';
+import { TraderTerminal } from '../components/TraderTerminal';
 import { useWeb3 } from '../context/Web3Context';
-import { shortenAddress, AQUA_REGISTRY_ADDRESS, A_USDC_ADDRESS } from '../config/contracts';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'trade' | 'lp' | 'keeper' | 'coverage'>('trade');
   const [isPriceControllerOpen, setIsPriceControllerOpen] = useState<boolean>(false);
 
   const {
-    account,
     role,
     roleConfig,
     balances,
-    appAddress,
-    oracleAddress,
     refreshBalances,
   } = useWeb3();
 
@@ -123,44 +120,9 @@ export default function Home() {
 
         {/* Tab View Content */}
         {activeTab === 'trade' && (
-          <section style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div
-              style={{
-                background: 'rgba(19, 27, 46, 0.5)',
-                border: '1px dashed rgba(0, 240, 255, 0.3)',
-                borderRadius: '16px',
-                padding: '32px',
-                textAlign: 'center',
-              }}
-            >
-              <h2 style={{ fontSize: '1.4rem', color: '#f8fafc', marginBottom: '8px' }}>
-                📈 Step 4 Complete: Market Stats Bar &amp; Live Price Controller
-              </h2>
-              <p style={{ color: '#94a3b8', maxWidth: '640px', margin: '0 auto 20px', lineHeight: 1.5, fontSize: '0.9rem' }}>
-                Next up in <strong>Step 5</strong>: Trader Terminal (Long/Short Selector, Leverage Slider, Dynamic Liquidation Price &amp; Margin Calculation, and Aqua Position Opening).
-              </p>
-              <div
-                style={{
-                  display: 'inline-flex',
-                  gap: '24px',
-                  background: 'rgba(10, 14, 26, 0.6)',
-                  padding: '12px 20px',
-                  borderRadius: '10px',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  fontSize: '0.8rem',
-                  color: '#cbd5e1',
-                  fontFamily: 'monospace',
-                }}
-              >
-                <span>Aqua: {shortenAddress(AQUA_REGISTRY_ADDRESS)}</span>
-                <span>•</span>
-                <span>aUSDC: {shortenAddress(A_USDC_ADDRESS)}</span>
-                <span>•</span>
-                <span>App: {shortenAddress(appAddress)}</span>
-                <span>•</span>
-                <span>Oracle: {shortenAddress(oracleAddress)}</span>
-              </div>
-            </div>
+          <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Phase 7 - Step 5 Trader Terminal */}
+            <TraderTerminal />
           </section>
         )}
 
