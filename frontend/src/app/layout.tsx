@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Web3Provider } from "@/context/Web3Context";
+import { MarketProvider } from "@/context/MarketContext";
 
 export const metadata: Metadata = {
   title: "Flyte | JIT-Sourced RFQ Perp Futures on 1inch Aqua",
@@ -16,7 +17,9 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <Web3Provider>
-          {children}
+          <MarketProvider>
+            {children}
+          </MarketProvider>
         </Web3Provider>
       </body>
     </html>

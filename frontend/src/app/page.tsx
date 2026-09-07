@@ -2,19 +2,20 @@
 
 import React, { useState } from 'react';
 import { Header } from '../components/Header';
+import { MarketStatsBar } from '../components/MarketStatsBar';
+import { PriceController } from '../components/PriceController';
 import { useWeb3 } from '../context/Web3Context';
-import { shortenAddress, AQUA_REGISTRY_ADDRESS, A_USDC_ADDRESS, USDC_ADDRESS } from '../config/contracts';
+import { shortenAddress, AQUA_REGISTRY_ADDRESS, A_USDC_ADDRESS } from '../config/contracts';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'trade' | 'lp' | 'keeper' | 'coverage'>('trade');
+  const [isPriceControllerOpen, setIsPriceControllerOpen] = useState<boolean>(false);
+
   const {
     account,
     role,
     roleConfig,
     balances,
-    isFork,
-    chainId,
-    blockNumber,
     appAddress,
     oracleAddress,
     refreshBalances,
@@ -27,7 +28,11 @@ export default function Home() {
         onTabChange={setActiveTab}
       />
 
+      {/* Main Container */}
       <main style={{ flex: 1, padding: '24px', maxWidth: '1440px', margin: '0 auto', width: '100%' }}>
+        {/* Market Stats Bar (Phase 7 - Step 4) */}
+        <MarketStatsBar onOpenPriceController={() => setIsPriceControllerOpen(true)} />
+
         {/* Role & Connection Summary Banner */}
         <div
           style={{
@@ -129,10 +134,10 @@ export default function Home() {
               }}
             >
               <h2 style={{ fontSize: '1.4rem', color: '#f8fafc', marginBottom: '8px' }}>
-                📈 Step 3 Complete: Web3 Provider &amp; Contracts Connected
+                📈 Step 4 Complete: Market Stats Bar &amp; Live Price Controller
               </h2>
               <p style={{ color: '#94a3b8', maxWidth: '640px', margin: '0 auto 20px', lineHeight: 1.5, fontSize: '0.9rem' }}>
-                Next up in <strong>Step 4</strong>: Live Market Stats Bar (BTC/USD Mark Price, Funding Rate Meter, Long/Short OI) and Interactive Mock Oracle Controller.
+                Next up in <strong>Step 5</strong>: Trader Terminal (Long/Short Selector, Leverage Slider, Dynamic Liquidation Price &amp; Margin Calculation, and Aqua Position Opening).
               </p>
               <div
                 style={{
@@ -210,6 +215,12 @@ export default function Home() {
           </section>
         )}
       </main>
+
+      {/* Interactive Price Controller Modal */}
+      <PriceController
+        isOpen={isPriceControllerOpen}
+        onClose={() => setIsPriceControllerOpen(false)}
+      />
     </div>
   );
 }
