@@ -6,6 +6,7 @@ import { MarketStatsBar } from '../components/MarketStatsBar';
 import { PriceController } from '../components/PriceController';
 import { TraderTerminal } from '../components/TraderTerminal';
 import { PositionsManager } from '../components/PositionsManager';
+import { LPConsole } from '../components/LPConsole';
 import { useWeb3 } from '../context/Web3Context';
 
 export default function Home() {
@@ -131,19 +132,9 @@ export default function Home() {
         )}
 
         {activeTab === 'lp' && (
-          <section
-            style={{
-              background: 'rgba(19, 27, 46, 0.5)',
-              border: '1px dashed rgba(255, 255, 255, 0.1)',
-              borderRadius: '16px',
-              padding: '32px',
-              textAlign: 'center',
-            }}
-          >
-            <h2 style={{ fontSize: '1.3rem', color: '#f8fafc' }}>💧 LP Quote Shipper &amp; Aave Yield Tracker</h2>
-            <p style={{ color: '#94a3b8', marginTop: '8px' }}>
-              Scheduled for implementation in Step 7.
-            </p>
+          <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Phase 7 - Step 7 LP Console & Aave Yield Tracker */}
+            <LPConsole />
           </section>
         )}
 
