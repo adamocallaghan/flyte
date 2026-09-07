@@ -5,6 +5,7 @@ import { Header } from '../components/Header';
 import { MarketStatsBar } from '../components/MarketStatsBar';
 import { PriceController } from '../components/PriceController';
 import { TraderTerminal } from '../components/TraderTerminal';
+import { PositionsManager } from '../components/PositionsManager';
 import { useWeb3 } from '../context/Web3Context';
 
 export default function Home() {
@@ -123,6 +124,9 @@ export default function Home() {
           <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* Phase 7 - Step 5 Trader Terminal */}
             <TraderTerminal />
+
+            {/* Phase 7 - Step 6 Positions Manager */}
+            <PositionsManager />
           </section>
         )}
 
