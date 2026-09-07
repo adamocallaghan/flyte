@@ -1,80 +1,214 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Header, TabType, DemoRole } from "@/components/Header";
+import React, { useState } from 'react';
+import { Header } from '../components/Header';
+import { useWeb3 } from '../context/Web3Context';
+import { shortenAddress, AQUA_REGISTRY_ADDRESS, A_USDC_ADDRESS, USDC_ADDRESS } from '../config/contracts';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<TabType>("trade");
-  const [selectedRole, setSelectedRole] = useState<DemoRole>("trader");
-  const [isConnected, setIsConnected] = useState<boolean>(true);
-  const [walletAddress, setWalletAddress] = useState<string>(
-    "0x70997970C51812dc3A010C7d01b50e0d17dc79C8" // Default Trader (Hamburglar)
-  );
-
-  const handleRoleChange = (role: DemoRole) => {
-    setSelectedRole(role);
-    if (role === "trader") {
-      setWalletAddress("0x70997970C51812dc3A010C7d01b50e0d17dc79C8");
-    } else if (role === "lp") {
-      setWalletAddress("0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC");
-    } else if (role === "keeper") {
-      setWalletAddress("0x90F79bf6EB2c4f870365E785982E1f101E93b906");
-    }
-  };
-
-  const handleConnect = () => {
-    setIsConnected(true);
-  };
+  const [activeTab, setActiveTab] = useState<'trade' | 'lp' | 'keeper' | 'coverage'>('trade');
+  const {
+    account,
+    role,
+    roleConfig,
+    balances,
+    isFork,
+    chainId,
+    blockNumber,
+    appAddress,
+    oracleAddress,
+    refreshBalances,
+  } = useWeb3();
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Header
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        selectedRole={selectedRole}
-        setSelectedRole={handleRoleChange}
-        walletAddress={walletAddress}
-        isConnected={isConnected}
-        onConnect={handleConnect}
+        onTabChange={setActiveTab}
       />
 
-      <main style={{ flex: 1, padding: "0 24px 32px 24px", maxWidth: "1600px", width: "100%", margin: "0 auto" }}>
-        <div className="glass-panel" style={{ padding: "48px 32px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
-          <div style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            background: "rgba(0, 210, 255, 0.1)",
-            border: "1px solid rgba(0, 210, 255, 0.25)",
-            padding: "4px 14px",
-            borderRadius: "20px",
-            fontSize: "0.8rem",
-            color: "var(--accent-cyan)",
-            fontWeight: 600
-          }}>
-            <span>⚡ Phase 7 UI Shell Ready</span>
+      <main style={{ flex: 1, padding: '24px', maxWidth: '1440px', margin: '0 auto', width: '100%' }}>
+        {/* Role & Connection Summary Banner */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(19, 27, 46, 0.8) 0%, rgba(13, 20, 36, 0.8) 100%)',
+            border: '1px solid rgba(0, 240, 255, 0.2)',
+            borderRadius: '12px',
+            padding: '16px 20px',
+            marginBottom: '24px',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                background: 'rgba(0, 240, 255, 0.1)',
+                border: '1px solid rgba(0, 240, 255, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.2rem',
+              }}
+            >
+              {role === 'trader' ? '📈' : role === 'lp' ? '💧' : role === 'keeper' ? '🤖' : '🦊'}
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontWeight: 600, color: '#f8fafc', fontSize: '0.95rem' }}>
+                  {roleConfig ? roleConfig.name : 'Browser Wallet'}
+                </span>
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    padding: '2px 8px',
+                    borderRadius: '999px',
+                    background: 'rgba(0, 240, 255, 0.15)',
+                    color: '#00f0ff',
+                    fontWeight: 600,
+                  }}
+                >
+                  {role.toUpperCase()}
+                </span>
+              </div>
+              <p style={{ margin: '2px 0 0', color: '#94a3b8', fontSize: '0.8rem' }}>
+                {roleConfig ? roleConfig.description : 'Connected via injected Web3 browser provider'}
+              </p>
+            </div>
           </div>
 
-          <h2 style={{ fontSize: "1.85rem", fontWeight: "800", color: "var(--text-primary)", letterSpacing: "-0.5px" }}>
-            {activeTab === "trade" && "📈 Perpetual Trading Terminal"}
-            {activeTab === "lp" && "💧 Market Maker Liquidity & Quotes"}
-            {activeTab === "keeper" && "🛡️ Funding Settlement & Liquidation Console"}
-            {activeTab === "coverage" && "🌐 1inch Aqua Shared Liquidity Coverage"}
-          </h2>
-
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", maxWidth: "620px", lineHeight: "1.6" }}>
-            {activeTab === "trade" && "Open long or short perpetual futures with JIT counter-margin sourced directly from LP wallets holding Aave v3 aUSDC via 1inch Aqua."}
-            {activeTab === "lp" && "Ship reusable quotes to 1inch Aqua without locking capital in DEX vaults. Your collateral remains in your wallet earning Aave lending yield until fill."}
-            {activeTab === "keeper" && "Trigger discrete OI skew funding settlements every 8 hours and earn 1% keeper rewards by liquidating underwater positions."}
-            {activeTab === "coverage" && "Monitor real-time capital efficiency and shared liquidity metrics across 1inch Aqua apps."}
-          </p>
-
-          <div style={{ display: "flex", gap: "12px", marginTop: "8px", flexWrap: "wrap", justifyContent: "center" }}>
-            <span className="badge-cyan">Active Role: {selectedRole.toUpperCase()}</span>
-            <span className="badge-teal">Network: Arbitrum One (42161)</span>
-            <span className="badge-coral">Collateral: aUSDC (Aave v3)</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>ETH Balance</div>
+              <div style={{ fontWeight: 600, color: '#f8fafc', fontFamily: 'monospace' }}>{balances.eth} ETH</div>
+            </div>
+            <div style={{ height: '24px', width: '1px', background: 'rgba(255, 255, 255, 0.1)' }} />
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>USDC</div>
+              <div style={{ fontWeight: 600, color: '#f8fafc', fontFamily: 'monospace' }}>{balances.usdc} USDC</div>
+            </div>
+            <div style={{ height: '24px', width: '1px', background: 'rgba(255, 255, 255, 0.1)' }} />
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Aave aUSDC</div>
+              <div style={{ fontWeight: 600, color: '#00f0ff', fontFamily: 'monospace' }}>{balances.aUsdc} aUSDC</div>
+            </div>
+            <button
+              onClick={refreshBalances}
+              title="Refresh balances"
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                color: '#94a3b8',
+                padding: '6px 10px',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+              }}
+            >
+              🔄
+            </button>
           </div>
         </div>
+
+        {/* Tab View Content */}
+        {activeTab === 'trade' && (
+          <section style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div
+              style={{
+                background: 'rgba(19, 27, 46, 0.5)',
+                border: '1px dashed rgba(0, 240, 255, 0.3)',
+                borderRadius: '16px',
+                padding: '32px',
+                textAlign: 'center',
+              }}
+            >
+              <h2 style={{ fontSize: '1.4rem', color: '#f8fafc', marginBottom: '8px' }}>
+                📈 Step 3 Complete: Web3 Provider &amp; Contracts Connected
+              </h2>
+              <p style={{ color: '#94a3b8', maxWidth: '640px', margin: '0 auto 20px', lineHeight: 1.5, fontSize: '0.9rem' }}>
+                Next up in <strong>Step 4</strong>: Live Market Stats Bar (BTC/USD Mark Price, Funding Rate Meter, Long/Short OI) and Interactive Mock Oracle Controller.
+              </p>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  gap: '24px',
+                  background: 'rgba(10, 14, 26, 0.6)',
+                  padding: '12px 20px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  fontSize: '0.8rem',
+                  color: '#cbd5e1',
+                  fontFamily: 'monospace',
+                }}
+              >
+                <span>Aqua: {shortenAddress(AQUA_REGISTRY_ADDRESS)}</span>
+                <span>•</span>
+                <span>aUSDC: {shortenAddress(A_USDC_ADDRESS)}</span>
+                <span>•</span>
+                <span>App: {shortenAddress(appAddress)}</span>
+                <span>•</span>
+                <span>Oracle: {shortenAddress(oracleAddress)}</span>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'lp' && (
+          <section
+            style={{
+              background: 'rgba(19, 27, 46, 0.5)',
+              border: '1px dashed rgba(255, 255, 255, 0.1)',
+              borderRadius: '16px',
+              padding: '32px',
+              textAlign: 'center',
+            }}
+          >
+            <h2 style={{ fontSize: '1.3rem', color: '#f8fafc' }}>💧 LP Quote Shipper &amp; Aave Yield Tracker</h2>
+            <p style={{ color: '#94a3b8', marginTop: '8px' }}>
+              Scheduled for implementation in Step 7.
+            </p>
+          </section>
+        )}
+
+        {activeTab === 'keeper' && (
+          <section
+            style={{
+              background: 'rgba(19, 27, 46, 0.5)',
+              border: '1px dashed rgba(255, 255, 255, 0.1)',
+              borderRadius: '16px',
+              padding: '32px',
+              textAlign: 'center',
+            }}
+          >
+            <h2 style={{ fontSize: '1.3rem', color: '#f8fafc' }}>🤖 Keeper Automation Console</h2>
+            <p style={{ color: '#94a3b8', marginTop: '8px' }}>
+              Scheduled for implementation in Step 8.
+            </p>
+          </section>
+        )}
+
+        {activeTab === 'coverage' && (
+          <section
+            style={{
+              background: 'rgba(19, 27, 46, 0.5)',
+              border: '1px dashed rgba(255, 255, 255, 0.1)',
+              borderRadius: '16px',
+              padding: '32px',
+              textAlign: 'center',
+            }}
+          >
+            <h2 style={{ fontSize: '1.3rem', color: '#f8fafc' }}>🛡️ Shared Liquidity Coverage Dashboard</h2>
+            <p style={{ color: '#94a3b8', marginTop: '8px' }}>
+              Scheduled for implementation in Step 9.
+            </p>
+          </section>
+        )}
       </main>
     </div>
   );

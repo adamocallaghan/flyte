@@ -1,23 +1,24 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Web3Provider } from "@/context/Web3Context";
 
 export const metadata: Metadata = {
-  title: "Flyte | JIT Perp DEX on 1inch Aqua & SwapVM",
-  description:
-    "Single-maker RFQ Perpetual Futures DEX where market-maker liquidity is just-in-time sourced from LP wallets holding Aave v3 aTokens via 1inch Aqua and executed with SwapVM custom opcodes.",
-  icons: {
-    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>",
-  },
+  title: "Flyte | JIT-Sourced RFQ Perp Futures on 1inch Aqua",
+  description: "Next-generation decentralized perpetual futures powered by 1inch Aqua JIT-liquidity and SwapVM custom opcodes.",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Web3Provider>
+          {children}
+        </Web3Provider>
+      </body>
     </html>
   );
 }
