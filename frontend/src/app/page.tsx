@@ -7,6 +7,7 @@ import { PriceController } from '../components/PriceController';
 import { TraderTerminal } from '../components/TraderTerminal';
 import { PositionsManager } from '../components/PositionsManager';
 import { LPConsole } from '../components/LPConsole';
+import { KeeperConsole } from '../components/KeeperConsole';
 import { useWeb3 } from '../context/Web3Context';
 
 export default function Home() {
@@ -139,19 +140,9 @@ export default function Home() {
         )}
 
         {activeTab === 'keeper' && (
-          <section
-            style={{
-              background: 'rgba(19, 27, 46, 0.5)',
-              border: '1px dashed rgba(255, 255, 255, 0.1)',
-              borderRadius: '16px',
-              padding: '32px',
-              textAlign: 'center',
-            }}
-          >
-            <h2 style={{ fontSize: '1.3rem', color: '#f8fafc' }}>🤖 Keeper Automation Console</h2>
-            <p style={{ color: '#94a3b8', marginTop: '8px' }}>
-              Scheduled for implementation in Step 8.
-            </p>
+          <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Phase 7 - Step 8 Keeper Console */}
+            <KeeperConsole />
           </section>
         )}
 
