@@ -176,7 +176,7 @@ export const TraderTerminal: React.FC = () => {
             type="button"
             onClick={() => setIsLong(true)}
             id="order-side-long"
-            className={`h-12 border-2 border-black font-headline font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-transform ${
+            className={`h-14 px-8 font-black border-2 border-black font-headline font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-transform ${
               isLong
                 ? 'bg-[#00F076] text-black shadow-[3px_3px_0px_0px_#000000] -translate-y-0.5'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
@@ -189,7 +189,7 @@ export const TraderTerminal: React.FC = () => {
             type="button"
             onClick={() => setIsLong(false)}
             id="order-side-short"
-            className={`h-12 border-2 border-black font-headline font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-transform ${
+            className={`h-14 px-8 font-black border-2 border-black font-headline font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-transform ${
               !isLong
                 ? 'bg-[#FF3366] text-white shadow-[3px_3px_0px_0px_#000000] -translate-y-0.5'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
@@ -232,7 +232,7 @@ export const TraderTerminal: React.FC = () => {
                 key={pct}
                 type="button"
                 onClick={() => handleQuickPercent(pct)}
-                className="bg-white hover:bg-[#00E5FF] text-black border-2 border-black font-mono font-bold text-xs py-1 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-colors cursor-pointer"
+                className="bg-white hover:bg-[#00E5FF] text-black border-2 border-black font-mono font-bold text-xs py-2 px-4 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-colors cursor-pointer tracking-wider"
               >
                 {pct}%
               </button>
@@ -266,7 +266,7 @@ export const TraderTerminal: React.FC = () => {
                 key={lev}
                 type="button"
                 onClick={() => setLeverage(lev)}
-                className={`py-1 text-center font-mono font-bold text-xs border-2 border-black cursor-pointer transition-transform ${
+                className={`py-2 px-3.5 text-center font-mono font-bold text-xs border-2 border-black cursor-pointer transition-transform tracking-wider ${
                   leverage === lev
                     ? 'bg-black text-[#00E5FF] shadow-[2px_2px_0px_0px_#000000]'
                     : 'bg-white hover:bg-gray-100 text-black shadow-[1px_1px_0px_0px_#000000]'
@@ -323,7 +323,7 @@ export const TraderTerminal: React.FC = () => {
             onClick={handleApprove}
             disabled={isApproving}
             id="btn-approve-collateral"
-            className="w-full h-13 bg-[#00E5FF] hover:bg-[#00cbe2] text-black border-2 border-black font-headline font-black text-sm uppercase tracking-wider shadow-[4px_4px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-colors cursor-pointer"
+            className="w-full h-14 px-8 font-black bg-[#00E5FF] hover:bg-[#00cbe2] text-black border-2 border-black font-headline font-black text-sm uppercase tracking-wider shadow-[4px_4px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-colors cursor-pointer"
           >
             {isApproving ? 'Approving aUSDC...' : '1. Approve aUSDC for Flyte'}
           </button>
@@ -333,7 +333,7 @@ export const TraderTerminal: React.FC = () => {
             onClick={handleOpenPosition}
             disabled={isSubmitting || margin <= 0}
             id="btn-open-position"
-            className={`w-full h-13 border-2 border-black font-headline font-black text-base uppercase tracking-wider shadow-[4px_4px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer ${
+            className={`w-full h-14 px-8 font-black border-2 border-black font-headline font-black text-base uppercase tracking-wider shadow-[4px_4px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer ${
               isLong
                 ? 'bg-[#00F076] hover:bg-[#00d669] text-black'
                 : 'bg-[#FF3366] hover:bg-[#e62957] text-white'

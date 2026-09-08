@@ -23,19 +23,20 @@
   --font-mono: 'JetBrains Mono', monospace;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html, body {
-  background-color: var(--bg-canvas);
-  color: var(--text-ink);
-  font-family: var(--font-headline);
-  min-height: 100vh;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-canvas);
+    color: var(--text-ink);
+    font-family: var(--font-headline);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Material Icons */
@@ -91,6 +92,18 @@ html, body {
   justify-content: center;
   gap: 6px;
   user-select: none;
+  padding: 8px 16px;
+  letter-spacing: 0.02em;
+}
+
+.neo-btn-sm {
+  padding: 4px 12px;
+  font-size: 11px;
+}
+
+.neo-btn-lg {
+  padding: 12px 24px;
+  font-size: 15px;
 }
 
 .neo-btn:active {

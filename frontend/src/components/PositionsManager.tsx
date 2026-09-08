@@ -171,7 +171,7 @@ export const PositionsManager: React.FC = () => {
             <button
               type="button"
               onClick={() => setFilterMine(false)}
-              className={`font-mono text-xs font-bold px-3 py-1 uppercase cursor-pointer transition-colors ${
+              className={`font-mono text-xs font-bold px-5 py-2 uppercase cursor-pointer transition-colors tracking-wider ${
                 !filterMine
                   ? 'bg-black text-[#00E5FF]'
                   : 'bg-transparent text-gray-700 hover:bg-gray-100'
@@ -182,7 +182,7 @@ export const PositionsManager: React.FC = () => {
             <button
               type="button"
               onClick={() => setFilterMine(true)}
-              className={`font-mono text-xs font-bold px-3 py-1 uppercase cursor-pointer transition-colors ${
+              className={`font-mono text-xs font-bold px-5 py-2 uppercase cursor-pointer transition-colors tracking-wider ${
                 filterMine
                   ? 'bg-black text-[#00E5FF]'
                   : 'bg-transparent text-gray-700 hover:bg-gray-100'
@@ -368,7 +368,7 @@ export const PositionsManager: React.FC = () => {
                         onClick={() => handleClosePosition(pos)}
                         disabled={closingId === pos.id}
                         id={`btn-close-position-${pos.id}`}
-                        className="bg-[#FF3366] hover:bg-[#e62957] text-white font-headline font-black text-xs uppercase px-3 py-1.5 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-[#FF3366] hover:bg-[#e62957] text-white font-headline font-black text-xs uppercase px-5 py-2 tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {closingId === pos.id ? 'CLOSING...' : 'CLOSE'}
                       </button>

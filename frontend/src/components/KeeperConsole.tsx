@@ -348,7 +348,7 @@ export const KeeperConsole: React.FC = () => {
             onClick={handleFastForwardTime}
             disabled={executingType === 'warp'}
             id="btn-fast-forward-time"
-            className="w-full h-10 bg-black text-[#FFE600] hover:bg-gray-900 border-2 border-black font-headline font-black text-xs uppercase shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer flex items-center justify-center gap-2 transition-transform disabled:opacity-50"
+            className="w-full h-12 px-6 bg-black text-[#FFE600] hover:bg-gray-900 border-2 border-black font-headline font-black text-xs uppercase shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer flex items-center justify-center gap-2 transition-transform disabled:opacity-50 tracking-wider"
           >
             <span>⏩</span>
             <span>{executingType === 'warp' ? 'Warping Time...' : 'Warp Time (+8 Hours)'}</span>
@@ -508,7 +508,7 @@ export const KeeperConsole: React.FC = () => {
                             onClick={() => handleLiquidate(pos)}
                             disabled={executingId === pos.id}
                             id={`btn-liquidate-${pos.id}`}
-                            className="bg-[#FF3366] hover:bg-[#e62957] text-white font-headline font-black text-xs uppercase px-3 py-1.5 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-colors disabled:opacity-50"
+                            className="bg-[#FF3366] hover:bg-[#e62957] text-white font-headline font-black text-xs uppercase px-5 py-2 tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-colors disabled:opacity-50"
                           >
                             {executingId === pos.id && executingType === 'liquidate'
                               ? 'LIQUIDATING...'
@@ -521,7 +521,7 @@ export const KeeperConsole: React.FC = () => {
                           onClick={() => handleSettleFunding(pos)}
                           disabled={executingId === pos.id}
                           id={`btn-settle-funding-${pos.id}`}
-                          className="bg-white hover:bg-gray-100 text-black font-headline font-black text-xs uppercase px-2.5 py-1.5 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-colors disabled:opacity-50"
+                          className="bg-white hover:bg-gray-100 text-black font-headline font-black text-xs uppercase px-5 py-2 tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-colors disabled:opacity-50"
                         >
                           {executingId === pos.id && executingType === 'funding'
                             ? 'SETTLING...'

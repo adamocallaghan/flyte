@@ -271,7 +271,7 @@ export const LPConsole: React.FC = () => {
           <button
             type="button"
             onClick={() => setRole('lp')}
-            className="bg-black text-[#FFE600] hover:bg-gray-900 border-2 border-black font-headline font-black text-xs uppercase px-4 py-2 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-transform"
+            className="bg-black text-[#FFE600] hover:bg-gray-900 border-2 border-black font-headline font-black text-xs uppercase px-6 py-3 tracking-wider shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-transform"
           >
             Switch to Grimace
           </button>
@@ -466,7 +466,7 @@ export const LPConsole: React.FC = () => {
               onClick={handleApproveAqua}
               disabled={isApproving}
               id="btn-approve-aqua"
-              className="h-12 bg-[#00E5FF] hover:bg-[#00cbe2] text-black border-2 border-black font-headline font-black text-sm uppercase px-6 tracking-wider shadow-[3px_3px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer"
+              className="h-12 bg-[#00E5FF] hover:bg-[#00cbe2] text-black border-2 border-black font-headline font-black text-sm uppercase px-8 py-3.5 tracking-wider shadow-[3px_3px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer"
             >
               {isApproving ? 'Approving 1inch Aqua...' : '1. Approve aUSDC for 1inch Aqua'}
             </button>
@@ -476,7 +476,7 @@ export const LPConsole: React.FC = () => {
               onClick={handleShipStrategy}
               disabled={isShipping}
               id="btn-ship-strategy"
-              className="h-12 bg-[#00F076] hover:bg-[#00d669] text-black border-2 border-black font-headline font-black text-sm uppercase px-6 tracking-wider shadow-[3px_3px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-12 bg-[#00F076] hover:bg-[#00d669] text-black border-2 border-black font-headline font-black text-sm uppercase px-8 py-3.5 tracking-wider shadow-[3px_3px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isShipping ? 'Shipping to Aqua...' : 'Ship Strategy to 1inch Aqua'}
             </button>

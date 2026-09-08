@@ -117,7 +117,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
       <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b-2 border-black font-headline">
         <div className="w-full flex flex-col">
           {/* TIER 1: MAIN NAVIGATION BAR */}
-          <div className="h-16 px-4 md:px-6 flex items-center justify-between border-b-2 border-black bg-white">
+          <div className="h-16 w-full border-b-2 border-black bg-white">
+            <div className="w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
             {/* Left: Brand & Live BTC Ticker */}
             <div className="flex items-center gap-4 md:gap-6">
               {/* Flyte Wordmark */}
@@ -156,7 +157,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                 type="button"
                 onClick={handleDealEth}
                 disabled={isDealingEth}
-                className="h-10 bg-[#00F076] hover:bg-[#00d86a] text-black uppercase px-3 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-1.5 font-bold text-xs cursor-pointer select-none"
+                className="h-10 bg-[#00F076] hover:bg-[#00d86a] text-black uppercase px-4 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2 font-bold text-xs cursor-pointer select-none tracking-wider"
                 title="Deal 10 ETH (native gas) to your wallet on Anvil"
               >
                 <span>⛽</span>
@@ -168,7 +169,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                 type="button"
                 onClick={handleFaucetAUSDC}
                 disabled={isFauceting}
-                className="h-10 bg-[#FFE600] hover:bg-[#ffe100] text-black uppercase px-3 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-1.5 font-bold text-xs cursor-pointer select-none"
+                className="h-10 bg-[#FFE600] hover:bg-[#ffe100] text-black uppercase px-4 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2 font-bold text-xs cursor-pointer select-none tracking-wider"
                 title="Mint 5,000 aUSDC collateral to your wallet"
               >
                 <span>💧</span>
@@ -186,7 +187,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
               <button
                 type="button"
                 onClick={() => setRoleModalOpen(true)}
-                className="h-10 border-2 border-black bg-[#EAEAEA] hover:bg-neutral-200 px-3 flex items-center gap-1.5 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none font-mono text-xs font-bold text-black cursor-pointer select-none"
+                className="h-10 border-2 border-black bg-[#EAEAEA] hover:bg-neutral-200 px-4 flex items-center gap-2 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none font-mono text-xs font-bold text-black cursor-pointer select-none tracking-wider"
                 title="Click to switch wallet or demo role"
               >
                 <span>{role === 'trader' ? '🍔' : role === 'lp' ? '🍇' : role === 'keeper' ? '🤡' : '🦊'}</span>
@@ -204,23 +205,25 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                   setTempOracleAddress(oracleAddress);
                   setConfigModalOpen(true);
                 }}
-                className="h-10 w-10 bg-white hover:bg-neutral-100 flex items-center justify-center border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none cursor-pointer"
+                className="h-10 w-10 bg-white hover:bg-neutral-100 flex items-center justify-center border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none cursor-pointer text-base"
                 title="Configure Deployed Contract Addresses"
               >
                 <span className="text-black text-[16px]">⚙️</span>
               </button>
             </div>
+            </div>
           </div>
 
           {/* TIER 2: SUB-NAVIGATION STRIP */}
-          <div className="h-11 px-4 md:px-6 flex items-center justify-between bg-[#FAFAFA] border-b-2 border-black">
+          <div className="h-11 w-full bg-[#FAFAFA] border-b-2 border-black">
+            <div className="w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
             {/* Tabs */}
             <nav className="flex items-center h-full">
               <button
                 type="button"
                 id="nav-tab-trade"
                 onClick={() => onTabChange('trade')}
-                className={`h-full flex items-center px-4 md:px-5 uppercase text-xs font-bold border-r-2 border-black cursor-pointer transition-none ${
+                className={`h-full flex items-center px-5 md:px-7 uppercase text-xs font-bold border-r-2 border-black cursor-pointer transition-none ${
                   activeTab === 'trade'
                     ? 'bg-[#00E5FF] text-black border-b-2 border-b-[#00E5FF]'
                     : 'text-black hover:bg-neutral-200'
@@ -232,7 +235,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                 type="button"
                 id="nav-tab-lp"
                 onClick={() => onTabChange('lp')}
-                className={`h-full flex items-center px-4 md:px-5 uppercase text-xs font-bold border-r-2 border-black cursor-pointer transition-none ${
+                className={`h-full flex items-center px-5 md:px-7 uppercase text-xs font-bold border-r-2 border-black cursor-pointer transition-none ${
                   activeTab === 'lp'
                     ? 'bg-[#00E5FF] text-black border-b-2 border-b-[#00E5FF]'
                     : 'text-black hover:bg-neutral-200'
@@ -244,7 +247,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                 type="button"
                 id="nav-tab-keeper"
                 onClick={() => onTabChange('keeper')}
-                className={`h-full flex items-center px-4 md:px-5 uppercase text-xs font-bold border-r-2 border-black cursor-pointer transition-none ${
+                className={`h-full flex items-center px-5 md:px-7 uppercase text-xs font-bold border-r-2 border-black cursor-pointer transition-none ${
                   activeTab === 'keeper'
                     ? 'bg-[#00E5FF] text-black border-b-2 border-b-[#00E5FF]'
                     : 'text-black hover:bg-neutral-200'
@@ -256,7 +259,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                 type="button"
                 id="nav-tab-coverage"
                 onClick={() => onTabChange('coverage')}
-                className={`h-full flex items-center px-4 md:px-5 uppercase text-xs font-bold border-r-2 border-black cursor-pointer transition-none ${
+                className={`h-full flex items-center px-5 md:px-7 uppercase text-xs font-bold border-r-2 border-black cursor-pointer transition-none ${
                   activeTab === 'coverage'
                     ? 'bg-[#00E5FF] text-black border-b-2 border-b-[#00E5FF]'
                     : 'text-black hover:bg-neutral-200'
@@ -277,6 +280,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
               <span className="text-gray-600 uppercase">
                 NETWORK: <strong className="text-black">{isFork ? `ANVIL FORK (${chainId || 31337})` : 'ARBITRUM ONE'}</strong>
               </span>
+            </div>
             </div>
           </div>
 

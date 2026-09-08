@@ -306,44 +306,6 @@ export const SharedCoverage: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* 4. Hackathon Track Integrations Matrix */}
-      <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6">
-        <h4 className="text-xl font-black text-black uppercase tracking-tight pb-3 border-b-2 border-black mb-4">
-          ETHGlobal Hackathon Track Alignment
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
-          <div className="bg-[#FAFAFA] border-2 border-black p-4 shadow-[2px_2px_0px_0px_#000000]">
-            <div className="font-headline font-black text-sm text-black uppercase mb-1.5 flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-[#00E5FF] border border-black"></span>
-              1. 1inch: &quot;Build an Aqua App&quot;
-            </div>
-            <p className="text-gray-700 leading-relaxed">
-              First-ever Perpetual Futures DEX native to 1inch Aqua. Eliminates fragmented LP vaults by JIT-pulling counterparty margin only upon position execution.
-            </p>
-          </div>
-
-          <div className="bg-[#FAFAFA] border-2 border-black p-4 shadow-[2px_2px_0px_0px_#000000]">
-            <div className="font-headline font-black text-sm text-black uppercase mb-1.5 flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-[#FFE600] border border-black"></span>
-              2. 1inch: &quot;SwapVM Custom Opcode&quot;
-            </div>
-            <p className="text-gray-700 leading-relaxed">
-              Implemented custom SwapVM opcodes: <code className="bg-black text-[#FFE600] px-1 font-bold">0x74</code> (Margin Calculation) and <code className="bg-black text-[#FFE600] px-1 font-bold">0x75</code> (OI Skew Funding Rate) for trustless on-chain execution.
-            </p>
-          </div>
-
-          <div className="bg-[#FAFAFA] border-2 border-black p-4 shadow-[2px_2px_0px_0px_#000000]">
-            <div className="font-headline font-black text-sm text-black uppercase mb-1.5 flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-[#00F076] border border-black"></span>
-              3. Aave v3 Money Market &amp; Indexing
-            </div>
-            <p className="text-gray-700 leading-relaxed">
-              Non-custodial multi-protocol capital efficiency with native Aave v3 supply yield and subgraphs indexing position lifetimes, liquidations, and keeper bounties.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
