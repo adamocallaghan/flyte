@@ -25,6 +25,7 @@ interface MonitoredPosition {
   lastFundingTimestamp: number;
   isLiquidatable: boolean;
   isFundingReady: boolean;
+  hoursRemaining?: number;
   keeperRewardEst: number;
   marginRatio: number;
 }
@@ -35,6 +36,7 @@ export const KeeperConsole: React.FC = () => {
     role,
     setRole,
     appContract,
+    provider,
     isFork,
     refreshBalances,
   } = useWeb3();
@@ -54,6 +56,14 @@ export const KeeperConsole: React.FC = () => {
     setIsScanning(true);
 
     try {
+      let currentTimestamp = Math.floor(Date.now() / 1000);
+      try {
+        if (provider) {
+          const block = await provider.getBlock('latest');
+          if (block) currentTimestamp = block.timestamp;
+        }
+      } catch {}
+
       const nextIdRaw = await appContract.nextPositionId().catch(() => BigInt(1));
       const nextId = Number(nextIdRaw);
       const list: MonitoredPosition[] = [];
@@ -78,9 +88,10 @@ export const KeeperConsole: React.FC = () => {
             // Liquidatable check (<= 5% maintenance margin)
             const isLiq = marginRatio <= 5.0 || remainingMargin <= 0;
 
-            // Funding ready check (>= 8 hours)
-            const now = Math.floor(Date.now() / 1000);
-            const isFundingReady = (now - lastFunding) >= 28800;
+            // Funding ready check (>= 8 hours = 28,800s on-chain)
+            const elapsed = currentTimestamp - lastFunding;
+            const isFundingReady = elapsed >= 28800;
+            const hoursRemaining = Math.max(0, Math.ceil((28800 - elapsed) / 3600));
 
             // 1% Keeper Fee reward = 100 bps
             const keeperReward = notional * 0.01;
@@ -99,6 +110,7 @@ export const KeeperConsole: React.FC = () => {
               lastFundingTimestamp: lastFunding,
               isLiquidatable: isLiq,
               isFundingReady,
+              hoursRemaining,
               keeperRewardEst: keeperReward,
               marginRatio,
             });
@@ -112,7 +124,7 @@ export const KeeperConsole: React.FC = () => {
     } finally {
       setIsScanning(false);
     }
-  }, [appContract, btcPrice]);
+  }, [appContract, provider, btcPrice]);
 
   useEffect(() => {
     scanPositions();
@@ -211,10 +223,20 @@ export const KeeperConsole: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Funding settlement failed:', err);
-      setStatusMessage({
-        type: 'error',
-        text: err.reason || err.message || 'Funding interval (8 hours) not reached yet.',
-      });
+      const data = err.data || (err.info && err.info.error && err.info.error.data) || (err.error && err.error.data) || '';
+      const isIntervalError = (typeof data === 'string' && data.includes('908058d1')) || (err.message && err.message.includes('908058d1'));
+
+      if (isIntervalError) {
+        setStatusMessage({
+          type: 'error',
+          text: '⏳ Funding interval (8 hours) has not elapsed yet. Click "Warp Time (+8 Hours)" above on Anvil to advance the clock!',
+        });
+      } else {
+        setStatusMessage({
+          type: 'error',
+          text: err.reason || err.message || 'Funding interval (8 hours) not reached yet.',
+        });
+      }
     } finally {
       setExecutingId(null);
       setExecutingType(null);
@@ -489,13 +511,13 @@ export const KeeperConsole: React.FC = () => {
                     {/* 6. Funding Status */}
                     <td className="py-3 px-3 border-r border-black">
                       <span
-                        className={`font-bold text-[11px] ${
+                        className={`font-bold text-[11px] px-2 py-0.5 border border-black ${
                           pos.isFundingReady
-                            ? 'bg-[#FFE600] text-black px-1.5 py-0.5 border border-black font-black'
-                            : 'text-gray-600'
+                            ? 'bg-[#00F076] text-black font-black'
+                            : 'bg-[#FAFAFA] text-gray-600'
                         }`}
                       >
-                        {pos.isFundingReady ? '⚡ ELIGIBLE (≥8H)' : 'RUNNING (8H EPOCH)'}
+                        {pos.isFundingReady ? '⚡ ELIGIBLE (≥8H)' : `RUNNING (${pos.hoursRemaining || 8}H LEFT)`}
                       </span>
                     </td>
 
@@ -518,14 +540,29 @@ export const KeeperConsole: React.FC = () => {
 
                         <button
                           type="button"
-                          onClick={() => handleSettleFunding(pos)}
+                          onClick={() => {
+                            if (!pos.isFundingReady) {
+                              setStatusMessage({
+                                type: 'info',
+                                text: `⏳ Position #${pos.id} funding interval not reached (${pos.hoursRemaining || 8}h remaining). Click "Warp Time (+8 Hours)" above to advance time!`,
+                              });
+                              return;
+                            }
+                            handleSettleFunding(pos);
+                          }}
                           disabled={executingId === pos.id}
                           id={`btn-settle-funding-${pos.id}`}
-                          className="bg-white hover:bg-gray-100 text-black font-headline font-black text-xs uppercase px-5 py-2 tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-colors disabled:opacity-50"
+                          className={`font-headline font-black text-xs uppercase px-5 py-2 tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-colors disabled:opacity-50 ${
+                            pos.isFundingReady
+                              ? 'bg-[#00F076] hover:bg-[#00d669] text-black'
+                              : 'bg-gray-100 hover:bg-gray-200 text-gray-500'
+                          }`}
                         >
                           {executingId === pos.id && executingType === 'funding'
                             ? 'SETTLING...'
-                            : 'SETTLE FUNDING'}
+                            : pos.isFundingReady
+                            ? '⚡ SETTLE FUNDING'
+                            : `WAIT (${pos.hoursRemaining || 8}H)`}
                         </button>
                       </div>
                     </td>

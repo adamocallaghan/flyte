@@ -17,6 +17,7 @@ export interface ShippedQuote {
   maker: string;
   collateralToken: string;
   maxNotional: number;
+  currentBalance?: number;
   maxLeverage: number;
   spreadBps: number;
   sideMask: number;
@@ -45,9 +46,17 @@ export const LPConsole: React.FC = () => {
     aquaContract,
     aUsdcContract,
     appAddress,
+    provider,
+    signer,
     isFork,
     refreshBalances,
   } = useWeb3();
+
+  // Active maker address: injected MetaMask when connected as browser, else Grimace
+  const activeMaker = (role === 'browser' && account)
+    ? account
+    : (role === 'lp' ? account || DEMO_ROLES.lp.address : DEMO_ROLES.lp.address);
+  const isBrowserMaker = role === 'browser' && !!account;
 
   // Quote Shipper Form State
   const [maxNotionalInput, setMaxNotionalInput] = useState<string>('50000');
@@ -81,6 +90,88 @@ export const LPConsole: React.FC = () => {
     return () => clearInterval(interval);
   }, [annualInterest]);
 
+  // Query live on-chain Shipped strategies from 1inch Aqua
+  const loadAquaStrategies = React.useCallback(async () => {
+    if (!aquaContract || !provider || !ethers.isAddress(appAddress)) return;
+
+    try {
+      const currentBlock = await provider.getBlockNumber();
+      const startBlock = Math.max(0, currentBlock - 2000);
+
+      const [shippedLogs, dockedLogs] = await Promise.all([
+        aquaContract.queryFilter(aquaContract.filters.Shipped(), startBlock, 'latest').catch(() => []),
+        aquaContract.queryFilter(aquaContract.filters.Docked(), startBlock, 'latest').catch(() => []),
+      ]);
+
+      const dockedHashes = new Set(
+        dockedLogs.map((log: any) => log.args[2].toLowerCase())
+      );
+
+      const appShipped = shippedLogs.filter(
+        (log: any) => log.args[1].toLowerCase() === appAddress.toLowerCase()
+      );
+
+      const strategyAbi = [
+        'tuple(address lp, address collateralToken, uint256 maxNotional, uint256 maxLeverage, uint256 spreadBps, uint8 sideMask, uint256 quoteExpiry)',
+      ];
+
+      const loaded: ShippedQuote[] = [];
+
+      for (const log of appShipped) {
+        const maker = (log as any).args?.[0];
+        const strategyHash = (log as any).args?.[2];
+        const strategyBytes = (log as any).args?.[3];
+        if (!maker || !strategyHash || !strategyBytes) continue;
+
+        try {
+          const decoded = ethers.AbiCoder.defaultAbiCoder().decode(strategyAbi, strategyBytes)[0];
+          const collateralToken = decoded[1];
+          const maxNotional = parseFloat(ethers.formatUnits(decoded[2], 6));
+          const maxLeverage = Number(decoded[3]);
+          const spreadBps = Number(decoded[4]);
+          const sideMask = Number(decoded[5]);
+          const quoteExpiry = Number(decoded[6]);
+
+          let currentBalance = maxNotional;
+          let isDocked = dockedHashes.has(strategyHash.toLowerCase());
+
+          try {
+            const [bal] = await (aquaContract as any).rawBalances(maker, appAddress, strategyHash, collateralToken);
+            currentBalance = parseFloat(ethers.formatUnits(bal, 6));
+            if (currentBalance === 0) isDocked = true;
+          } catch {}
+
+          loaded.push({
+            strategyHash,
+            maker,
+            collateralToken,
+            maxNotional,
+            currentBalance,
+            maxLeverage,
+            spreadBps,
+            sideMask,
+            quoteExpiry,
+            status: isDocked ? 'docked' : 'active',
+          });
+        } catch (e) {
+          console.warn('Failed to decode Aqua strategy:', e);
+        }
+      }
+
+      if (loaded.length > 0) {
+        setShippedQuotes(loaded);
+      }
+    } catch (err) {
+      console.warn('Could not load Aqua strategies:', err);
+    }
+  }, [aquaContract, provider, appAddress]);
+
+  useEffect(() => {
+    loadAquaStrategies();
+    const interval = setInterval(loadAquaStrategies, 5000);
+    return () => clearInterval(interval);
+  }, [loadAquaStrategies]);
+
   // Allowance check for 1inch Aqua
   const notionalAmount = parseFloat(maxNotionalInput) || 0;
   const notionalRaw = ethers.parseUnits(notionalAmount > 0 ? notionalAmount.toFixed(6) : '0', 6);
@@ -90,13 +181,13 @@ export const LPConsole: React.FC = () => {
   const handleApproveAqua = async () => {
     if (!aUsdcContract) return;
     setIsApproving(true);
-    setStatusMessage({ type: 'info', text: 'Approving aUSDC for 1inch Aqua Registry...' });
+    setStatusMessage({ type: 'info', text: `Approving aUSDC for 1inch Aqua Registry (${shortenAddress(activeMaker)})...` });
 
     try {
       let tokenContract = aUsdcContract;
 
-      // In Anvil fork mode, ensure Grimace is the signer
-      if (isFork && role !== 'lp') {
+      // In Demo simulation mode (not browser wallet), sign as Grimace
+      if (role !== 'browser' && isFork) {
         const anvilProv = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
         const lpWallet = new ethers.Wallet(DEMO_ROLES.lp.privateKey, anvilProv);
         tokenContract = aUsdcContract.connect(lpWallet) as any;
@@ -106,11 +197,11 @@ export const LPConsole: React.FC = () => {
       await tx.wait();
       await refreshBalances();
 
-      setStatusMessage({ type: 'success', text: '✅ aUSDC successfully approved for 1inch Aqua!' });
-      setTimeout(() => setStatusMessage(null), 3000);
+      setStatusMessage({ type: 'success', text: `✅ aUSDC successfully approved for 1inch Aqua (${shortenAddress(activeMaker)})!` });
+      setTimeout(() => setStatusMessage(null), 4000);
     } catch (err: any) {
       console.error('Aqua approval failed:', err);
-      setStatusMessage({ type: 'error', text: err.message || 'Approval failed' });
+      setStatusMessage({ type: 'error', text: err.reason || err.message || 'Approval failed' });
     } finally {
       setIsApproving(false);
     }
@@ -126,11 +217,11 @@ export const LPConsole: React.FC = () => {
     setIsShipping(true);
     setStatusMessage({
       type: 'info',
-      text: `Shipping JIT quote (${formatUsd(notionalAmount)} aUSDC depth) to 1inch Aqua...`,
+      text: `Shipping JIT quote (${formatUsd(notionalAmount)} aUSDC depth) to 1inch Aqua for Maker ${shortenAddress(activeMaker)}...`,
     });
 
     try {
-      const lpAddr = role === 'lp' ? account || DEMO_ROLES.lp.address : DEMO_ROLES.lp.address;
+      const lpAddr = activeMaker;
 
       // Strategy Struct tuple
       const abiCoder = ethers.AbiCoder.defaultAbiCoder();
@@ -152,8 +243,8 @@ export const LPConsole: React.FC = () => {
       if (aquaContract && aquaContract.runner) {
         let contractToCall = aquaContract;
 
-        // In Anvil fork, use Grimace signer for 1-click execution
-        if (isFork && role !== 'lp') {
+        // In Demo simulation mode (not browser wallet), sign as Grimace
+        if (role !== 'browser' && isFork) {
           const anvilProv = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
           const lpWallet = new ethers.Wallet(DEMO_ROLES.lp.privateKey, anvilProv);
           contractToCall = aquaContract.connect(lpWallet) as any;
@@ -167,19 +258,7 @@ export const LPConsole: React.FC = () => {
         );
         const receipt = await tx.wait();
 
-        const newQuote: ShippedQuote = {
-          strategyHash: computedHash,
-          maker: lpAddr,
-          collateralToken: A_USDC_ADDRESS,
-          maxNotional: notionalAmount,
-          maxLeverage,
-          spreadBps,
-          sideMask,
-          quoteExpiry,
-          status: 'active',
-        };
-
-        setShippedQuotes((prev) => [newQuote, ...prev.filter((q) => q.strategyHash !== computedHash)]);
+        await loadAquaStrategies();
         await refreshBalances();
 
         setStatusMessage({
@@ -194,6 +273,7 @@ export const LPConsole: React.FC = () => {
           maker: lpAddr,
           collateralToken: A_USDC_ADDRESS,
           maxNotional: notionalAmount,
+          currentBalance: notionalAmount,
           maxLeverage,
           spreadBps,
           sideMask,
@@ -226,7 +306,9 @@ export const LPConsole: React.FC = () => {
     try {
       if (aquaContract && aquaContract.runner) {
         let contractToCall = aquaContract;
-        if (isFork && role !== 'lp') {
+        const isUserQuote = account && quote.maker.toLowerCase() === account.toLowerCase();
+
+        if (!isUserQuote && isFork) {
           const anvilProv = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
           const lpWallet = new ethers.Wallet(DEMO_ROLES.lp.privateKey, anvilProv);
           contractToCall = aquaContract.connect(lpWallet) as any;
@@ -238,6 +320,7 @@ export const LPConsole: React.FC = () => {
           [A_USDC_ADDRESS]
         );
         await tx.wait();
+        await loadAquaStrategies();
       }
 
       setShippedQuotes((prev) =>
@@ -392,6 +475,31 @@ export const LPConsole: React.FC = () => {
           </span>
         </div>
 
+        {/* Active Maker Status Bar */}
+        <div className="mb-5 p-3.5 bg-[#FAFAFA] border-2 border-black flex flex-wrap justify-between items-center text-xs font-mono gap-3 shadow-[2px_2px_0px_0px_#000000]">
+          <div className="flex items-center gap-2">
+            <span className="text-gray-500 uppercase font-bold">Maker Wallet:</span>
+            <span className="font-bold text-black">{shortenAddress(activeMaker)}</span>
+            {isBrowserMaker ? (
+              <span className="bg-[#00E5FF] text-black font-bold px-1.5 py-0.5 border border-black text-[10px]">
+                🦊 Injected MetaMask
+              </span>
+            ) : (
+              <span className="bg-[#FFE600] text-black font-bold px-1.5 py-0.5 border border-black text-[10px]">
+                Demo Grimace
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-gray-500 uppercase font-bold">Aqua aUSDC Allowance:</span>
+            <span className={`font-black ${isAquaAllowanceSufficient ? 'text-[#006d32]' : 'text-[#d9044b]'}`}>
+              {parseFloat(ethers.formatUnits(balances.aUsdcAllowanceAqua, 6)) > 1e9
+                ? 'Unlimited (Approved)'
+                : `${formatUsd(balances.aUsdcAllowanceAqua)}`}
+            </span>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
           {/* 1. Max Notional Depth */}
           <div>
@@ -487,9 +595,19 @@ export const LPConsole: React.FC = () => {
       {/* BOTTOM SECTION: Active Shipped Quotes Inspector */}
       <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6">
         <div className="flex flex-wrap justify-between items-center pb-4 border-b-2 border-black mb-5 gap-3">
-          <h4 className="text-xl font-black text-black uppercase tracking-tight">
-            Active Shipped Strategies on 1inch Aqua
-          </h4>
+          <div className="flex items-center gap-3">
+            <h4 className="text-xl font-black text-black uppercase tracking-tight">
+              Active Shipped Strategies on 1inch Aqua
+            </h4>
+            <button
+              type="button"
+              onClick={loadAquaStrategies}
+              title="Refresh Aqua Strategies"
+              className="bg-white hover:bg-gray-100 text-black border-2 border-black font-mono text-xs font-bold px-2 py-0.5 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer"
+            >
+              🔄 Refresh
+            </button>
+          </div>
           <span className="font-mono text-xs text-gray-600 font-bold bg-[#FAFAFA] border border-black px-2 py-1">
             Registry: {shortenAddress(AQUA_REGISTRY_ADDRESS)}
           </span>
@@ -521,10 +639,22 @@ export const LPConsole: React.FC = () => {
                     {shortenAddress(q.strategyHash, 6)}
                   </td>
                   <td className="py-3 px-3 border-r border-black font-bold text-black">
-                    {shortenAddress(q.maker)}
+                    <div className="flex items-center gap-1.5">
+                      <span>{shortenAddress(q.maker)}</span>
+                      {account && q.maker.toLowerCase() === account.toLowerCase() && (
+                        <span className="bg-[#00E5FF] text-black text-[9px] font-bold px-1 border border-black">
+                          YOU
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="py-3 px-3 border-r border-black font-black text-black">
-                    {formatUsd(q.maxNotional)} aUSDC
+                    <div>{formatUsd(q.currentBalance ?? q.maxNotional)} aUSDC</div>
+                    {q.currentBalance !== undefined && q.currentBalance !== q.maxNotional && (
+                      <div className="text-[10px] text-gray-500 font-normal">
+                        cap: {formatUsd(q.maxNotional)}
+                      </div>
+                    )}
                   </td>
                   <td className="py-3 px-3 border-r border-black text-gray-800">
                     {q.maxLeverage}x
