@@ -22,7 +22,7 @@ export const PriceController: React.FC<PriceControllerProps> = ({ isOpen, onClos
     const success = await setMarketPrice(targetPrice);
     if (success) {
       setCustomPrice(targetPrice.toString());
-      setStatusMessage(`✅ Mock oracle successfully updated to ${formatUsd(targetPrice)}!`);
+      setStatusMessage(`✅ Mock oracle updated to ${formatUsd(targetPrice)}!`);
       setTimeout(() => setStatusMessage(null), 3000);
     } else {
       setStatusMessage(`❌ Failed to update price`);
@@ -39,221 +39,125 @@ export const PriceController: React.FC<PriceControllerProps> = ({ isOpen, onClos
     setStatusMessage(`Updating oracle price to ${formatUsd(val)}...`);
     const success = await setMarketPrice(val);
     if (success) {
-      setStatusMessage(`✅ Mock oracle successfully updated to ${formatUsd(val)}!`);
+      setStatusMessage(`✅ Mock oracle updated to ${formatUsd(val)}!`);
       setTimeout(() => setStatusMessage(null), 3000);
     }
   };
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0, 0, 0, 0.75)',
-        backdropFilter: 'blur(8px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 2000,
-        animation: 'fadeIn 0.2s ease',
-      }}
+      className="fixed inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center z-[2000] p-4 font-headline select-none"
       onClick={onClose}
     >
       <div
-        style={{
-          background: '#0f172a',
-          border: '1px solid rgba(0, 240, 255, 0.3)',
-          borderRadius: '20px',
-          padding: '28px',
-          width: '92%',
-          maxWidth: '540px',
-          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(0, 240, 255, 0.15)',
-        }}
+        className="w-full max-w-lg bg-white border-2 border-black shadow-[8px_8px_0px_0px_#000000] p-6 text-black relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.5rem' }}>⚡</span>
+        <div className="flex justify-between items-start pb-4 border-b-2 border-black mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-black text-[#FFE600] border-2 border-black flex items-center justify-center text-xl shadow-[2px_2px_0px_0px_#000000] shrink-0">
+              ⚡
+            </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#f8fafc', fontWeight: 800 }}>
+              <h3 className="text-lg font-black text-black uppercase tracking-tight">
                 Live Mock Oracle Controller
               </h3>
-              <span style={{ fontSize: '0.75rem', color: '#00f0ff', fontWeight: 600 }}>
-                Interactive Demo &amp; Stress-Testing Suite
+              <span className="font-mono text-[11px] text-gray-500 uppercase">
+                Stress-Testing &amp; Liquidation Suite
               </span>
             </div>
           </div>
+
           <button
+            type="button"
             onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#94a3b8',
-              fontSize: '1.3rem',
-              cursor: 'pointer',
-            }}
+            className="w-8 h-8 bg-black text-[#FFE600] hover:bg-gray-900 border-2 border-black flex items-center justify-center font-bold text-sm shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer"
           >
             ✕
           </button>
         </div>
 
-        <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '20px' }}>
-          Directly manipulate the on-chain BTC/USD oracle price on your local Anvil fork. Test PnL swings,
-          observe SwapVM funding rate calculations, or crash the price to trigger <strong>keeper liquidations</strong>!
+        <p className="text-gray-700 font-mono text-xs leading-relaxed mb-4">
+          Directly manipulate the on-chain BTC/USD oracle price on local Anvil fork. Test PnL swings, observe SwapVM 0x75 funding rate updates, or crash the price to trigger <strong>keeper liquidations</strong>!
         </p>
 
         {/* Current Price Banner */}
-        <div
-          style={{
-            background: 'rgba(15, 23, 42, 0.8)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '12px',
-            padding: '16px',
-            textAlign: 'center',
-            marginBottom: '20px',
-          }}
-        >
-          <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        <div className="bg-[#FAFAFA] border-2 border-black p-4 text-center mb-5 shadow-[2px_2px_0px_0px_#000000]">
+          <span className="font-mono text-[10px] text-gray-500 uppercase font-bold tracking-wider block mb-1">
             Current Spot Oracle Price
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#00f0ff', fontFamily: 'monospace' }}>
+          </span>
+          <div className="font-mono text-3xl font-black text-black">
             {formatUsd(btcPrice)}
           </div>
         </div>
 
         {/* Quick Presets */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 600, marginBottom: '10px' }}>
-            Quick Demo Actions
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+        <div className="mb-5">
+          <span className="block font-mono text-xs font-bold text-black uppercase mb-2">
+            Quick Simulation Actions
+          </span>
+          <div className="grid grid-cols-2 gap-2.5">
             <button
+              type="button"
               onClick={() => handleQuickChange(66000, '+10% Pump')}
               disabled={isUpdatingPrice}
-              style={{
-                background: 'rgba(16, 185, 129, 0.12)',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                borderRadius: '10px',
-                padding: '12px',
-                color: '#10b981',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-              }}
+              className="bg-[#00F076] hover:bg-[#00d669] text-black border-2 border-black font-headline font-black text-xs uppercase p-3 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer flex items-center justify-center gap-1.5 transition-transform disabled:opacity-50"
             >
               <span>🚀</span>
               <span>+10% Pump ($66k)</span>
             </button>
 
             <button
+              type="button"
               onClick={() => handleQuickChange(63000, '+5% Bump')}
               disabled={isUpdatingPrice}
-              style={{
-                background: 'rgba(16, 185, 129, 0.08)',
-                border: '1px solid rgba(16, 185, 129, 0.2)',
-                borderRadius: '10px',
-                padding: '12px',
-                color: '#34d399',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-              }}
+              className="bg-[#00E5FF] hover:bg-[#00cbe2] text-black border-2 border-black font-headline font-black text-xs uppercase p-3 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer flex items-center justify-center gap-1.5 transition-transform disabled:opacity-50"
             >
               <span>📈</span>
               <span>+5% Bump ($63k)</span>
             </button>
 
             <button
+              type="button"
               onClick={() => handleQuickChange(57000, '-5% Dip')}
               disabled={isUpdatingPrice}
-              style={{
-                background: 'rgba(244, 63, 94, 0.08)',
-                border: '1px solid rgba(244, 63, 94, 0.2)',
-                borderRadius: '10px',
-                padding: '12px',
-                color: '#fb7185',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-              }}
+              className="bg-[#FFE600] hover:bg-[#ffe100] text-black border-2 border-black font-headline font-black text-xs uppercase p-3 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer flex items-center justify-center gap-1.5 transition-transform disabled:opacity-50"
             >
               <span>📉</span>
               <span>-5% Dip ($57k)</span>
             </button>
 
             <button
+              type="button"
               onClick={() => handleQuickChange(54000, '-10% Liquidation')}
               disabled={isUpdatingPrice}
-              style={{
-                background: 'rgba(244, 63, 94, 0.15)',
-                border: '1px solid rgba(244, 63, 94, 0.4)',
-                borderRadius: '10px',
-                padding: '12px',
-                color: '#f43f5e',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-              }}
+              className="bg-[#FF3366] hover:bg-[#e62957] text-white border-2 border-black font-headline font-black text-xs uppercase p-3 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer flex items-center justify-center gap-1.5 transition-transform disabled:opacity-50"
             >
               <span>🩸</span>
               <span>-10% Liquidate ($54k)</span>
             </button>
           </div>
 
-          <div style={{ marginTop: '10px' }}>
-            <button
-              onClick={() => handleQuickChange(60000, 'Baseline Reset')}
-              disabled={isUpdatingPrice}
-              style={{
-                width: '100%',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: '8px',
-                padding: '10px',
-                color: '#94a3b8',
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-              }}
-            >
-              <span>🔄</span>
-              <span>Reset to Baseline ($60,000)</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => handleQuickChange(60000, 'Baseline Reset')}
+            disabled={isUpdatingPrice}
+            className="w-full mt-2.5 bg-white hover:bg-gray-100 text-black border-2 border-black font-headline font-black text-xs uppercase p-2.5 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer flex items-center justify-center gap-2 transition-transform disabled:opacity-50"
+          >
+            <span>🔄</span>
+            <span>Reset to Baseline ($60,000)</span>
+          </button>
         </div>
 
         {/* Custom Price Form */}
-        <form onSubmit={handleCustomSubmit} style={{ marginTop: '16px' }}>
-          <div style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 600, marginBottom: '8px' }}>
+        <form onSubmit={handleCustomSubmit} className="pt-4 border-t-2 border-black">
+          <label className="block font-mono text-xs font-bold text-black uppercase mb-1.5">
             Set Custom Target Price
-          </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
-              <span
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#94a3b8',
-                }}
-              >
+          </label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-gray-500">
                 $
               </span>
               <input
@@ -263,31 +167,13 @@ export const PriceController: React.FC<PriceControllerProps> = ({ isOpen, onClos
                 max="500000"
                 value={customPrice}
                 onChange={(e) => setCustomPrice(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: 'rgba(15, 23, 42, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  borderRadius: '10px',
-                  padding: '10px 12px 10px 28px',
-                  color: '#f8fafc',
-                  fontFamily: 'monospace',
-                  fontSize: '0.95rem',
-                }}
+                className="w-full bg-[#FAFAFA] border-2 border-black p-2.5 pl-8 font-mono text-sm font-bold text-black focus:outline-none focus:bg-white"
               />
             </div>
             <button
               type="submit"
               disabled={isUpdatingPrice}
-              style={{
-                background: 'linear-gradient(135deg, #00f0ff 0%, #0070f3 100%)',
-                border: 'none',
-                borderRadius: '10px',
-                padding: '10px 20px',
-                color: '#0a0e1a',
-                fontWeight: 700,
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-              }}
+              className="bg-black text-[#FFE600] hover:bg-gray-900 border-2 border-black font-headline font-black text-xs uppercase px-5 py-2.5 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-transform disabled:opacity-50"
             >
               {isUpdatingPrice ? 'Updating...' : 'Set Price'}
             </button>
@@ -296,18 +182,7 @@ export const PriceController: React.FC<PriceControllerProps> = ({ isOpen, onClos
 
         {/* Status Toast */}
         {statusMessage && (
-          <div
-            style={{
-              marginTop: '16px',
-              padding: '10px 14px',
-              borderRadius: '8px',
-              background: 'rgba(0, 240, 255, 0.1)',
-              border: '1px solid rgba(0, 240, 255, 0.3)',
-              color: '#00f0ff',
-              fontSize: '0.85rem',
-              textAlign: 'center',
-            }}
-          >
+          <div className="mt-4 p-3 border-2 border-black bg-[#00E5FF] text-black font-mono text-xs font-bold text-center shadow-[2px_2px_0px_0px_#000000]">
             {statusMessage}
           </div>
         )}

@@ -23,137 +23,127 @@ export default function Home() {
   } = useWeb3();
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="min-h-screen bg-[#f4f4f4] text-[#1b1b1b] flex flex-col font-headline selection:bg-[#FFE600] selection:text-black">
+      {/* Neo-Brutalist Two-Tier Navigation Header */}
       <Header
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
 
-      {/* Main Container */}
-      <main style={{ flex: 1, padding: '24px', maxWidth: '1440px', margin: '0 auto', width: '100%' }}>
-        {/* Market Stats Bar (Phase 7 - Step 4) */}
+      {/* Main Content Cockpit */}
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+        {/* Market Stats Bar */}
         <MarketStatsBar onOpenPriceController={() => setIsPriceControllerOpen(true)} />
 
         {/* Role & Connection Summary Banner */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, rgba(19, 27, 46, 0.8) 0%, rgba(13, 20, 36, 0.8) 100%)',
-            border: '1px solid rgba(0, 240, 255, 0.2)',
-            borderRadius: '12px',
-            padding: '16px 20px',
-            marginBottom: '24px',
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '16px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'rgba(0, 240, 255, 0.1)',
-                border: '1px solid rgba(0, 240, 255, 0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.2rem',
-              }}
-            >
+        <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-4 md:p-5 mb-6 flex flex-wrap items-center justify-between gap-4 text-black">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 bg-black text-[#FFE600] border-2 border-black flex items-center justify-center text-xl shadow-[2px_2px_0px_0px_#000000] shrink-0">
               {role === 'trader' ? '📈' : role === 'lp' ? '💧' : role === 'keeper' ? '🤖' : '🦊'}
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontWeight: 600, color: '#f8fafc', fontSize: '0.95rem' }}>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-black text-base uppercase tracking-tight">
                   {roleConfig ? roleConfig.name : 'Browser Wallet'}
                 </span>
-                <span
-                  style={{
-                    fontSize: '0.7rem',
-                    padding: '2px 8px',
-                    borderRadius: '999px',
-                    background: 'rgba(0, 240, 255, 0.15)',
-                    color: '#00f0ff',
-                    fontWeight: 600,
-                  }}
-                >
+                <span className="bg-[#00E5FF] border border-black font-mono text-[10px] font-black px-2 py-0.5 text-black uppercase shadow-[1px_1px_0px_0px_#000000]">
                   {role.toUpperCase()}
                 </span>
               </div>
-              <p style={{ margin: '2px 0 0', color: '#94a3b8', fontSize: '0.8rem' }}>
+              <p className="font-mono text-xs text-gray-600 mt-0.5">
                 {roleConfig ? roleConfig.description : 'Connected via injected Web3 browser provider'}
               </p>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>ETH Balance</div>
-              <div style={{ fontWeight: 600, color: '#f8fafc', fontFamily: 'monospace' }}>{balances.eth} ETH</div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="bg-[#FAFAFA] border-2 border-black px-3 py-1.5 shadow-[2px_2px_0px_0px_#000000] text-right font-mono">
+              <span className="block text-[9px] text-gray-500 uppercase font-bold">ETH Balance</span>
+              <span className="text-xs font-black text-black">{balances.eth} ETH</span>
             </div>
-            <div style={{ height: '24px', width: '1px', background: 'rgba(255, 255, 255, 0.1)' }} />
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>USDC</div>
-              <div style={{ fontWeight: 600, color: '#f8fafc', fontFamily: 'monospace' }}>{balances.usdc} USDC</div>
+
+            <div className="bg-[#FAFAFA] border-2 border-black px-3 py-1.5 shadow-[2px_2px_0px_0px_#000000] text-right font-mono">
+              <span className="block text-[9px] text-gray-500 uppercase font-bold">USDC</span>
+              <span className="text-xs font-black text-black">{balances.usdc} USDC</span>
             </div>
-            <div style={{ height: '24px', width: '1px', background: 'rgba(255, 255, 255, 0.1)' }} />
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Aave aUSDC</div>
-              <div style={{ fontWeight: 600, color: '#00f0ff', fontFamily: 'monospace' }}>{balances.aUsdc} aUSDC</div>
+
+            <div className="bg-[#FAFAFA] border-2 border-black px-3 py-1.5 shadow-[2px_2px_0px_0px_#000000] text-right font-mono">
+              <span className="block text-[9px] text-gray-500 uppercase font-bold">Aave aUSDC</span>
+              <span className="text-xs font-black text-[#006d32]">{balances.aUsdc} aUSDC</span>
             </div>
+
             <button
+              type="button"
               onClick={refreshBalances}
               title="Refresh balances"
-              style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '8px',
-                color: '#94a3b8',
-                padding: '6px 10px',
-                cursor: 'pointer',
-                fontSize: '0.8rem',
-              }}
+              className="w-9 h-9 bg-white hover:bg-gray-100 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none flex items-center justify-center font-bold text-sm cursor-pointer transition-transform"
             >
               🔄
             </button>
           </div>
         </div>
 
-        {/* Tab View Content */}
+        {/* Tab Views */}
         {activeTab === 'trade' && (
-          <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Phase 7 - Step 5 Trader Terminal */}
+          <section className="flex flex-col gap-6">
             <TraderTerminal />
-
-            {/* Phase 7 - Step 6 Positions Manager */}
             <PositionsManager />
           </section>
         )}
 
         {activeTab === 'lp' && (
-          <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Phase 7 - Step 7 LP Console & Aave Yield Tracker */}
+          <section className="flex flex-col gap-6">
             <LPConsole />
           </section>
         )}
 
         {activeTab === 'keeper' && (
-          <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Phase 7 - Step 8 Keeper Console */}
+          <section className="flex flex-col gap-6">
             <KeeperConsole />
           </section>
         )}
 
         {activeTab === 'coverage' && (
-          <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Phase 7 - Step 9 Shared Coverage Dashboard */}
+          <section className="flex flex-col gap-6">
             <SharedCoverage />
           </section>
         )}
       </main>
+
+      {/* Neo-Brutalist Cockpit Footer */}
+      <footer className="w-full bg-white border-t-2 border-black mt-16 py-8 px-4 sm:px-6 lg:px-8 font-headline">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-black text-[#FFE600] border-2 border-black flex items-center justify-center font-headline font-black text-lg shadow-[2px_2px_0px_0px_#000000]">
+              ✈️
+            </div>
+            <div>
+              <span className="text-lg font-black text-black tracking-tight block">
+                FLYTE DEX
+              </span>
+              <span className="font-mono text-xs text-gray-600 block">
+                JIT-Sourced RFQ Perpetual Futures on 1inch Aqua &amp; SwapVM
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-2.5 font-mono text-[11px] font-bold">
+            <span className="bg-[#00F076] border border-black px-2.5 py-1 text-black shadow-[1px_1px_0px_0px_#000000]">
+              CHAIN ID: 31337 (ANVIL)
+            </span>
+            <span className="bg-[#00E5FF] border border-black px-2.5 py-1 text-black shadow-[1px_1px_0px_0px_#000000]">
+              1INCH AQUA REGISTRY
+            </span>
+            <span className="bg-[#FFE600] border border-black px-2.5 py-1 text-black shadow-[1px_1px_0px_0px_#000000]">
+              SWAPVM OPCODES 0x74/0x75
+            </span>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto border-t-2 border-black mt-6 pt-4 text-center font-mono text-xs text-gray-600">
+          ETHGlobal OnlineEth 2026 • Zero fragmented LP vaults, 100% non-custodial capital mobility.
+        </div>
+      </footer>
 
       {/* Interactive Price Controller Modal */}
       <PriceController
