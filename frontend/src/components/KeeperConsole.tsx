@@ -43,6 +43,13 @@ export const KeeperConsole: React.FC = () => {
 
   const { btcPrice, refreshMarketStats } = useMarket();
 
+  // Active keeper address: injected MetaMask when connected as browser, else Ronald
+  const activeKeeper = (role === 'browser' && account)
+    ? account
+    : (role === 'keeper' ? account || DEMO_ROLES.keeper.address : DEMO_ROLES.keeper.address);
+  const isBrowserKeeper = role === 'browser' && !!account;
+  const keeperLabel = isBrowserKeeper ? shortenAddress(activeKeeper) : 'Ronald';
+
   const [monitoredPositions, setMonitoredPositions] = useState<MonitoredPosition[]>([]);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [totalRewardsClaimed, setTotalRewardsClaimed] = useState<number>(0);
@@ -138,27 +145,35 @@ export const KeeperConsole: React.FC = () => {
     setExecutingType('liquidate');
     setStatusMessage({
       type: 'info',
-      text: `Keeper Ronald executing liquidation on Position #${pos.id} (Claiming ${formatUsd(pos.keeperRewardEst)} reward)...`,
+      text: `${keeperLabel} executing liquidation on Position #${pos.id} (Claiming ${formatUsd(pos.keeperRewardEst)} reward)...`,
     });
 
     try {
       if (appContract && appContract.runner) {
         let contractToCall = appContract;
 
-        // In Anvil fork, ensure Keeper Ronald is the caller
-        if (isFork && role !== 'keeper') {
+        // In Demo simulation mode (not browser wallet), sign as Ronald
+        if (role !== 'browser' && isFork) {
           const anvilProv = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
           const keeperWallet = new ethers.Wallet(DEMO_ROLES.keeper.privateKey, anvilProv);
           contractToCall = appContract.connect(keeperWallet) as any;
         }
 
-        const tx = await (contractToCall as any).liquidate(pos.id);
+        let gasLimit: bigint | undefined;
+        try {
+          const est = await (contractToCall as any).liquidate.estimateGas(pos.id);
+          gasLimit = (est * 130n) / 100n;
+        } catch {
+          gasLimit = 650_000n;
+        }
+
+        const tx = await (contractToCall as any).liquidate(pos.id, gasLimit ? { gasLimit } : {});
         const receipt = await tx.wait();
 
         setTotalRewardsClaimed((prev) => prev + pos.keeperRewardEst);
         setStatusMessage({
           type: 'success',
-          text: `🎉 Liquidation successful! Position #${pos.id} liquidated. Keeper reward of ${formatUsd(pos.keeperRewardEst)} aUSDC sent to Ronald! Tx: ${shortenAddress(receipt.hash)}`,
+          text: `🎉 Liquidation successful! Position #${pos.id} liquidated. Keeper reward of ${formatUsd(pos.keeperRewardEst)} aUSDC sent to ${keeperLabel}! Tx: ${shortenAddress(receipt.hash)}`,
         });
 
         await scanPositions();
@@ -170,7 +185,7 @@ export const KeeperConsole: React.FC = () => {
         setMonitoredPositions((prev) => prev.filter((p) => p.id !== pos.id));
         setStatusMessage({
           type: 'success',
-          text: `🎉 Liquidation simulated! Keeper reward of ${formatUsd(pos.keeperRewardEst)} aUSDC awarded to Ronald.`,
+          text: `🎉 Liquidation simulated! Keeper reward of ${formatUsd(pos.keeperRewardEst)} aUSDC awarded to ${keeperLabel}.`,
         });
       }
     } catch (err: any) {
@@ -192,19 +207,29 @@ export const KeeperConsole: React.FC = () => {
     setExecutingType('funding');
     setStatusMessage({
       type: 'info',
-      text: `Settling 8h funding interval for Position #${pos.id} via SwapVM Opcode 0x75...`,
+      text: `${keeperLabel} settling 8h funding interval for Position #${pos.id} via SwapVM Opcode 0x75...`,
     });
 
     try {
       if (appContract && appContract.runner) {
         let contractToCall = appContract;
-        if (isFork && role !== 'keeper') {
+
+        // In Demo simulation mode (not browser wallet), sign as Ronald
+        if (role !== 'browser' && isFork) {
           const anvilProv = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
           const keeperWallet = new ethers.Wallet(DEMO_ROLES.keeper.privateKey, anvilProv);
           contractToCall = appContract.connect(keeperWallet) as any;
         }
 
-        const tx = await (contractToCall as any).settleFunding(pos.id);
+        let gasLimit: bigint | undefined;
+        try {
+          const est = await (contractToCall as any).settleFunding.estimateGas(pos.id);
+          gasLimit = (est * 130n) / 100n;
+        } catch {
+          gasLimit = 500_000n;
+        }
+
+        const tx = await (contractToCall as any).settleFunding(pos.id, gasLimit ? { gasLimit } : {});
         const receipt = await tx.wait();
 
         setStatusMessage({
@@ -299,6 +324,29 @@ export const KeeperConsole: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* Active Keeper Status Bar */}
+      <div className="p-3.5 bg-[#FAFAFA] border-2 border-black flex flex-wrap justify-between items-center text-xs font-mono gap-3 shadow-[2px_2px_0px_0px_#000000]">
+        <div className="flex items-center gap-2">
+          <span className="text-gray-500 uppercase font-bold">Active Keeper:</span>
+          <span className="font-bold text-black">{shortenAddress(activeKeeper)}</span>
+          {isBrowserKeeper ? (
+            <span className="bg-[#00E5FF] text-black font-bold px-1.5 py-0.5 border border-black text-[10px]">
+              🦊 Injected MetaMask
+            </span>
+          ) : (
+            <span className="bg-[#FFE600] text-black font-bold px-1.5 py-0.5 border border-black text-[10px]">
+              Demo Ronald
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-gray-500 uppercase font-bold">1% Liquidation Bounty:</span>
+          <span className="font-black text-[#006d32]">
+            {isBrowserKeeper ? `Direct to Your Wallet (${shortenAddress(activeKeeper)})` : 'Sent to Ronald (0x90F7...)'}
+          </span>
+        </div>
+      </div>
 
       {/* TOP: Keeper Metrics & Fast-Forward Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
