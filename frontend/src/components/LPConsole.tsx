@@ -240,6 +240,37 @@ export const LPConsole: React.FC = () => {
 
       const computedHash = ethers.keccak256(strategyBytes);
 
+      // Pre-cache Aqua storage slot on local Anvil fork to prevent RPC state trie pruning error
+      if (isFork) {
+        try {
+          const slotMaker = ethers.keccak256(ethers.concat([
+            ethers.zeroPadValue(lpAddr, 32),
+            ethers.zeroPadValue('0x00', 32),
+          ]));
+          const slotApp = ethers.keccak256(ethers.concat([
+            ethers.zeroPadValue(appAddress, 32),
+            slotMaker,
+          ]));
+          const slotStrat = ethers.keccak256(ethers.concat([
+            computedHash,
+            slotApp,
+          ]));
+          const slotToken = ethers.keccak256(ethers.concat([
+            ethers.zeroPadValue(A_USDC_ADDRESS, 32),
+            slotStrat,
+          ]));
+
+          const anvilProv = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
+          await anvilProv.send('anvil_setStorageAt', [
+            AQUA_REGISTRY_ADDRESS,
+            slotToken,
+            '0x0000000000000000000000000000000000000000000000000000000000000000',
+          ]);
+        } catch (e) {
+          console.warn('Aqua storage pre-cache skipped:', e);
+        }
+      }
+
       if (aquaContract && aquaContract.runner) {
         let contractToCall = aquaContract;
 
@@ -250,11 +281,25 @@ export const LPConsole: React.FC = () => {
           contractToCall = aquaContract.connect(lpWallet) as any;
         }
 
+        let gasLimit: bigint | undefined;
+        try {
+          const est = await (contractToCall as any).ship.estimateGas(
+            appAddress,
+            strategyBytes,
+            [A_USDC_ADDRESS],
+            [notionalRaw]
+          );
+          gasLimit = (est * 130n) / 100n;
+        } catch {
+          gasLimit = 350_000n;
+        }
+
         const tx = await (contractToCall as any).ship(
           appAddress,
           strategyBytes,
           [A_USDC_ADDRESS],
-          [notionalRaw]
+          [notionalRaw],
+          gasLimit ? { gasLimit } : {}
         );
         const receipt = await tx.wait();
 
