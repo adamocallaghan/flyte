@@ -153,99 +153,63 @@ export const TraderTerminal: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(320px, 420px) 1fr',
-        gap: '24px',
-        alignItems: 'start',
-      }}
-    >
-      {/* LEFT: Order Entry Terminal */}
-      <div
-        style={{
-          background: '#0d1424',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '16px',
-          padding: '24px',
-          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#f8fafc', fontWeight: 800 }}>
-            Place Order
-          </h3>
-          <span
-            style={{
-              fontSize: '0.75rem',
-              color: '#00f0ff',
-              background: 'rgba(0, 240, 255, 0.1)',
-              padding: '3px 8px',
-              borderRadius: '6px',
-              fontWeight: 600,
-            }}
-          >
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start font-headline">
+      {/* LEFT: Order Entry Terminal (5 cols on lg) */}
+      <div className="lg:col-span-5 bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6">
+        <div className="flex justify-between items-center pb-4 border-b-2 border-black mb-5">
+          <div>
+            <h2 className="text-xl font-black text-black uppercase tracking-tight">
+              Place Order
+            </h2>
+            <span className="font-mono text-[11px] text-gray-500 uppercase">
+              BTC/USD Perpetual
+            </span>
+          </div>
+          <span className="bg-[#FFE600] border-2 border-black font-mono text-[10px] font-bold px-2 py-0.5 text-black uppercase shadow-[2px_2px_0px_0px_#000000]">
             1inch Aqua RFQ
           </span>
         </div>
 
         {/* 1. Long / Short Selector */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '8px',
-            background: 'rgba(15, 23, 42, 0.8)',
-            padding: '4px',
-            borderRadius: '10px',
-            marginBottom: '20px',
-          }}
-        >
+        <div className="grid grid-cols-2 gap-3 mb-5">
           <button
+            type="button"
             onClick={() => setIsLong(true)}
             id="order-side-long"
-            style={{
-              background: isLong ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'transparent',
-              color: isLong ? '#ffffff' : '#94a3b8',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '10px',
-              fontWeight: 700,
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
+            className={`h-12 border-2 border-black font-headline font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-transform ${
+              isLong
+                ? 'bg-[#00F076] text-black shadow-[3px_3px_0px_0px_#000000] -translate-y-0.5'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
+            } active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
           >
-            📈 Long (Buy)
+            <span>📈</span>
+            <span>Long (Buy)</span>
           </button>
           <button
+            type="button"
             onClick={() => setIsLong(false)}
             id="order-side-short"
-            style={{
-              background: !isLong ? 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)' : 'transparent',
-              color: !isLong ? '#ffffff' : '#94a3b8',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '10px',
-              fontWeight: 700,
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
+            className={`h-12 border-2 border-black font-headline font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-transform ${
+              !isLong
+                ? 'bg-[#FF3366] text-white shadow-[3px_3px_0px_0px_#000000] -translate-y-0.5'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
+            } active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
           >
-            📉 Short (Sell)
+            <span>📉</span>
+            <span>Short (Sell)</span>
           </button>
         </div>
 
         {/* 2. Margin Input */}
-        <div style={{ marginBottom: '18px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '6px' }}>
-            <span style={{ color: '#cbd5e1', fontWeight: 600 }}>Collateral (Margin)</span>
-            <span style={{ color: '#94a3b8' }}>
-              Avail: <strong style={{ color: '#00f0ff' }}>{balances.aUsdc} aUSDC</strong>
+        <div className="mb-5">
+          <div className="flex justify-between items-center mb-1.5 font-mono text-xs">
+            <span className="font-bold text-black uppercase">Collateral (Margin)</span>
+            <span className="text-gray-600">
+              Avail: <strong className="text-black font-bold">{balances.aUsdc} aUSDC</strong>
             </span>
           </div>
-          <div style={{ position: 'relative' }}>
+
+          <div className="relative flex items-center">
             <input
               type="number"
               step="10"
@@ -254,50 +218,21 @@ export const TraderTerminal: React.FC = () => {
               value={marginInput}
               onChange={(e) => setMarginInput(e.target.value)}
               id="input-margin-amount"
-              style={{
-                width: '100%',
-                background: 'rgba(15, 23, 42, 0.9)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '10px',
-                padding: '12px 70px 12px 14px',
-                color: '#f8fafc',
-                fontSize: '1.1rem',
-                fontWeight: 700,
-                fontFamily: 'monospace',
-              }}
+              className="w-full bg-[#FAFAFA] border-2 border-black p-3 pr-20 font-mono text-xl font-bold text-black focus:outline-none focus:bg-white focus:shadow-[2px_2px_0px_0px_#000000]"
             />
-            <span
-              style={{
-                position: 'absolute',
-                right: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#94a3b8',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-              }}
-            >
+            <span className="absolute right-3 font-mono font-bold text-xs bg-black text-[#FFE600] px-2 py-1 border border-black select-none">
               aUSDC
             </span>
           </div>
 
           {/* Quick % buttons */}
-          <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+          <div className="grid grid-cols-4 gap-2 mt-2">
             {[25, 50, 75, 100].map((pct) => (
               <button
                 key={pct}
                 type="button"
                 onClick={() => handleQuickPercent(pct)}
-                style={{
-                  flex: 1,
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '6px',
-                  padding: '4px',
-                  color: '#94a3b8',
-                  fontSize: '0.75rem',
-                  cursor: 'pointer',
-                }}
+                className="bg-white hover:bg-[#00E5FF] text-black border-2 border-black font-mono font-bold text-xs py-1 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-colors cursor-pointer"
               >
                 {pct}%
               </button>
@@ -306,13 +241,14 @@ export const TraderTerminal: React.FC = () => {
         </div>
 
         {/* 3. Leverage Selector */}
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '8px' }}>
-            <span style={{ color: '#cbd5e1', fontWeight: 600 }}>Leverage</span>
-            <span style={{ color: '#00f0ff', fontWeight: 800, fontFamily: 'monospace' }}>
+        <div className="mb-5">
+          <div className="flex justify-between items-center mb-2">
+            <span className="font-mono text-xs font-bold text-black uppercase">Leverage</span>
+            <span className="bg-black text-[#00E5FF] font-mono font-black text-xs px-2 py-0.5 border border-black">
               {leverage}x
             </span>
           </div>
+
           <input
             type="range"
             min="1"
@@ -321,29 +257,20 @@ export const TraderTerminal: React.FC = () => {
             value={leverage}
             onChange={(e) => setLeverage(parseInt(e.target.value))}
             id="input-leverage-slider"
-            style={{
-              width: '100%',
-              accentColor: '#00f0ff',
-              cursor: 'pointer',
-              marginBottom: '10px',
-            }}
+            className="w-full accent-black cursor-pointer mb-2.5 h-2 bg-gray-200 rounded-none border border-black"
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+
+          <div className="grid grid-cols-6 gap-1.5">
             {[1, 2, 3, 5, 7, 10].map((lev) => (
               <button
                 key={lev}
                 type="button"
                 onClick={() => setLeverage(lev)}
-                style={{
-                  background: leverage === lev ? 'rgba(0, 240, 255, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                  border: leverage === lev ? '1px solid #00f0ff' : '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '6px',
-                  padding: '4px 8px',
-                  color: leverage === lev ? '#00f0ff' : '#94a3b8',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
+                className={`py-1 text-center font-mono font-bold text-xs border-2 border-black cursor-pointer transition-transform ${
+                  leverage === lev
+                    ? 'bg-black text-[#00E5FF] shadow-[2px_2px_0px_0px_#000000]'
+                    : 'bg-white hover:bg-gray-100 text-black shadow-[1px_1px_0px_0px_#000000]'
+                } active:translate-x-[1px] active:translate-y-[1px] active:shadow-none`}
               >
                 {lev}x
               </button>
@@ -352,56 +279,40 @@ export const TraderTerminal: React.FC = () => {
         </div>
 
         {/* 4. Execution / Summary Breakdown */}
-        <div
-          style={{
-            background: 'rgba(15, 23, 42, 0.7)',
-            border: '1px solid rgba(255, 255, 255, 0.06)',
-            borderRadius: '10px',
-            padding: '14px',
-            marginBottom: '20px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-            fontSize: '0.8rem',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: '#94a3b8' }}>Position Size</span>
-            <span style={{ color: '#f8fafc', fontWeight: 600, fontFamily: 'monospace' }}>
+        <div className="bg-[#FAFAFA] border-2 border-black p-4 mb-5 flex flex-col gap-2 font-mono text-xs">
+          <div className="flex justify-between text-gray-700">
+            <span>Position Size</span>
+            <span className="text-black font-bold">
               {formatUsd(notional)} ({btcSize.toFixed(4)} BTC)
             </span>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: '#94a3b8' }}>Entry Price (0.1% spread)</span>
-            <span style={{ color: '#f8fafc', fontFamily: 'monospace' }}>{formatUsd(entryPrice)}</span>
+          <div className="flex justify-between text-gray-700">
+            <span>Entry Price (0.1% spread)</span>
+            <span className="text-black font-bold">{formatUsd(entryPrice)}</span>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: '#94a3b8' }}>Est. Liquidation Price</span>
+          <div className="flex justify-between text-gray-700">
+            <span>Est. Liquidation Price</span>
             <span
-              style={{
-                color: isLong ? '#f43f5e' : '#10b981',
-                fontWeight: 700,
-                fontFamily: 'monospace',
-              }}
+              className={`font-bold ${
+                isLong ? 'text-[#d9044b]' : 'text-[#006d32]'
+              }`}
             >
               {formatUsd(liqPrice)}
             </span>
           </div>
 
-          <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.06)', margin: '4px 0' }} />
+          <div className="border-b-2 border-black my-1" />
 
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: '#94a3b8' }}>SwapVM Execution Fee (10 bps)</span>
-            <span style={{ color: '#cbd5e1', fontFamily: 'monospace' }}>{formatUsd(spreadFee)} aUSDC</span>
+          <div className="flex justify-between text-gray-700">
+            <span>SwapVM Execution Fee (10 bps)</span>
+            <span className="text-black">{formatUsd(spreadFee)} aUSDC</span>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: '#00f0ff', fontWeight: 600 }}>Total Required Deposit</span>
-            <span style={{ color: '#00f0ff', fontWeight: 700, fontFamily: 'monospace' }}>
-              {formatUsd(totalTraderRequired)} aUSDC
-            </span>
+          <div className="flex justify-between items-center bg-[#FFE600] p-2 border border-black text-black font-bold">
+            <span className="uppercase text-[11px]">Total Deposit Required</span>
+            <span className="text-sm">{formatUsd(totalTraderRequired)} aUSDC</span>
           </div>
         </div>
 
@@ -412,18 +323,7 @@ export const TraderTerminal: React.FC = () => {
             onClick={handleApprove}
             disabled={isApproving}
             id="btn-approve-collateral"
-            style={{
-              width: '100%',
-              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-              border: 'none',
-              borderRadius: '10px',
-              padding: '14px',
-              color: '#ffffff',
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
-            }}
+            className="w-full h-13 bg-[#00E5FF] hover:bg-[#00cbe2] text-black border-2 border-black font-headline font-black text-sm uppercase tracking-wider shadow-[4px_4px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-colors cursor-pointer"
           >
             {isApproving ? 'Approving aUSDC...' : '1. Approve aUSDC for Flyte'}
           </button>
@@ -433,23 +333,11 @@ export const TraderTerminal: React.FC = () => {
             onClick={handleOpenPosition}
             disabled={isSubmitting || margin <= 0}
             id="btn-open-position"
-            style={{
-              width: '100%',
-              background: isLong
-                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                : 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)',
-              border: 'none',
-              borderRadius: '10px',
-              padding: '14px',
-              color: '#ffffff',
-              fontWeight: 800,
-              fontSize: '1rem',
-              cursor: isSubmitting || margin <= 0 ? 'not-allowed' : 'pointer',
-              boxShadow: isLong
-                ? '0 4px 16px rgba(16, 185, 129, 0.4)'
-                : '0 4px 16px rgba(244, 63, 94, 0.4)',
-              transition: 'all 0.2s ease',
-            }}
+            className={`w-full h-13 border-2 border-black font-headline font-black text-base uppercase tracking-wider shadow-[4px_4px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer ${
+              isLong
+                ? 'bg-[#00F076] hover:bg-[#00d669] text-black'
+                : 'bg-[#FF3366] hover:bg-[#e62957] text-white'
+            } ${isSubmitting || margin <= 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {isSubmitting
               ? 'Opening Position via Aqua...'
@@ -460,171 +348,105 @@ export const TraderTerminal: React.FC = () => {
         {/* Status Message */}
         {orderStatus && (
           <div
-            style={{
-              marginTop: '14px',
-              padding: '10px 14px',
-              borderRadius: '8px',
-              fontSize: '0.8rem',
-              lineHeight: 1.4,
-              background:
-                orderStatus.type === 'success'
-                  ? 'rgba(16, 185, 129, 0.12)'
-                  : orderStatus.type === 'error'
-                  ? 'rgba(244, 63, 94, 0.12)'
-                  : 'rgba(0, 240, 255, 0.12)',
-              border: `1px solid ${
-                orderStatus.type === 'success'
-                  ? 'rgba(16, 185, 129, 0.3)'
-                  : orderStatus.type === 'error'
-                  ? 'rgba(244, 63, 94, 0.3)'
-                  : 'rgba(0, 240, 255, 0.3)'
-              }`,
-              color:
-                orderStatus.type === 'success'
-                  ? '#10b981'
-                  : orderStatus.type === 'error'
-                  ? '#f43f5e'
-                  : '#00f0ff',
-            }}
+            className={`mt-4 p-3 border-2 border-black shadow-[3px_3px_0px_0px_#000000] font-mono text-xs font-bold leading-snug ${
+              orderStatus.type === 'success'
+                ? 'bg-[#00F076] text-black'
+                : orderStatus.type === 'error'
+                ? 'bg-[#FF3366] text-white'
+                : 'bg-[#00E5FF] text-black'
+            }`}
           >
             {orderStatus.text}
           </div>
         )}
       </div>
 
-      {/* RIGHT: Architecture Highlights & JIT RFQ Quote Inspector */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* RIGHT: Architecture Highlights & JIT RFQ Quote Inspector (7 cols on lg) */}
+      <div className="lg:col-span-7 flex flex-col gap-6">
         {/* JIT RFQ Counterparty Quote Card */}
-        <div
-          style={{
-            background: '#0d1424',
-            border: '1px solid rgba(0, 240, 255, 0.25)',
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '1.4rem' }}>💧</span>
+        <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6">
+          <div className="flex justify-between items-start pb-4 border-b-2 border-black mb-5 gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[#00E5FF] border-2 border-black flex items-center justify-center text-xl shadow-[2px_2px_0px_0px_#000000] shrink-0">
+                💧
+              </div>
               <div>
-                <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#f8fafc', fontWeight: 800 }}>
+                <h3 className="text-lg font-black text-black uppercase tracking-tight">
                   Active JIT Liquidity Quote
-                </h4>
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                </h3>
+                <span className="font-mono text-[11px] text-gray-500 uppercase">
                   Sourced Just-In-Time from LP Maker via 1inch Aqua Registry
                 </span>
               </div>
             </div>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                background: 'rgba(16, 185, 129, 0.15)',
-                color: '#10b981',
-                padding: '3px 8px',
-                borderRadius: '6px',
-                fontWeight: 700,
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-              }}
-            >
+            <span className="bg-[#00F076] border-2 border-black font-mono text-[10px] font-bold px-2 py-0.5 text-black uppercase shadow-[2px_2px_0px_0px_#000000] shrink-0">
               🟢 LIVE QUOTE
             </span>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-              gap: '12px',
-              marginBottom: '16px',
-            }}
-          >
-            <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '12px', borderRadius: '10px' }}>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>LP Maker</span>
-              <div style={{ fontSize: '0.9rem', color: '#f8fafc', fontWeight: 700, fontFamily: 'monospace' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+            <div className="bg-[#FAFAFA] border-2 border-black p-3 shadow-[2px_2px_0px_0px_#000000]">
+              <span className="block font-mono text-[10px] text-gray-500 uppercase">LP Maker</span>
+              <div className="font-mono text-xs md:text-sm font-bold text-black mt-0.5 truncate">
                 Grimace ({shortenAddress(DEMO_ROLES.lp.address)})
               </div>
             </div>
 
-            <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '12px', borderRadius: '10px' }}>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Available JIT Depth</span>
-              <div style={{ fontSize: '0.9rem', color: '#00f0ff', fontWeight: 700, fontFamily: 'monospace' }}>
+            <div className="bg-[#FAFAFA] border-2 border-black p-3 shadow-[2px_2px_0px_0px_#000000]">
+              <span className="block font-mono text-[10px] text-gray-500 uppercase">Available JIT Depth</span>
+              <div className="font-mono text-xs md:text-sm font-black text-[#006d32] mt-0.5">
                 $50,000 aUSDC
               </div>
             </div>
 
-            <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '12px', borderRadius: '10px' }}>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>LP Margin JIT Pulled</span>
-              <div style={{ fontSize: '0.9rem', color: '#f8fafc', fontWeight: 700, fontFamily: 'monospace' }}>
+            <div className="bg-[#FAFAFA] border-2 border-black p-3 shadow-[2px_2px_0px_0px_#000000]">
+              <span className="block font-mono text-[10px] text-gray-500 uppercase">LP Counter-Margin JIT Pulled</span>
+              <div className="font-mono text-xs md:text-sm font-bold text-black mt-0.5">
                 {formatUsd(margin)} aUSDC
               </div>
             </div>
 
-            <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '12px', borderRadius: '10px' }}>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Native Aave Yield</span>
-              <div style={{ fontSize: '0.9rem', color: '#10b981', fontWeight: 700, fontFamily: 'monospace' }}>
+            <div className="bg-[#FAFAFA] border-2 border-black p-3 shadow-[2px_2px_0px_0px_#000000]">
+              <span className="block font-mono text-[10px] text-gray-500 uppercase">Native Aave Yield</span>
+              <div className="font-mono text-xs md:text-sm font-black text-black mt-0.5 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#00F076]"></span>
                 ~4.25% APY
               </div>
             </div>
           </div>
 
-          <div
-            style={{
-              background: 'rgba(0, 240, 255, 0.05)',
-              border: '1px solid rgba(0, 240, 255, 0.15)',
-              borderRadius: '10px',
-              padding: '12px 16px',
-              fontSize: '0.8rem',
-              color: '#94a3b8',
-              lineHeight: 1.5,
-            }}
-          >
-            <strong style={{ color: '#00f0ff' }}>The Flyte Innovation:</strong> The LP’s $50,000 capital is NOT locked idle in the perp contract. It remains in Grimace’s wallet earning Aave v3 supply yield until the moment you click "Open Position", when 1inch Aqua executes a single atomic <code>AQUA.pull()</code> for exactly {formatUsd(margin)} counter-margin!
+          <div className="bg-[#FFE600] border-2 border-black p-4 shadow-[3px_3px_0px_0px_#000000] text-black font-mono text-xs leading-relaxed">
+            <strong className="uppercase font-black block mb-1">⚡ The Flyte Innovation:</strong>
+            The LP’s $50,000 capital is <span className="underline font-bold">NOT</span> locked idle in the perp contract. It remains in Grimace’s wallet earning Aave v3 supply yield until the moment you click &quot;Open Position&quot;, when 1inch Aqua executes a single atomic <code className="bg-black text-[#FFE600] px-1 py-0.5 font-bold">AQUA.pull()</code> for exactly {formatUsd(margin)} counter-margin!
           </div>
         </div>
 
         {/* SwapVM Instruction Breakdown */}
-        <div
-          style={{
-            background: '#0d1424',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '16px',
-            padding: '24px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-            <span style={{ fontSize: '1.2rem' }}>⚙️</span>
-            <h4 style={{ margin: 0, fontSize: '1rem', color: '#f8fafc', fontWeight: 700 }}>
+        <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6">
+          <div className="flex items-center gap-3 pb-3 border-b-2 border-black mb-4">
+            <div className="w-8 h-8 bg-black text-[#FFE600] border-2 border-black flex items-center justify-center text-base shadow-[2px_2px_0px_0px_#000000]">
+              ⚙️
+            </div>
+            <h4 className="text-base font-black text-black uppercase tracking-tight">
               SwapVM Custom Opcode Execution
             </h4>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem' }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '8px 12px',
-                background: 'rgba(15, 23, 42, 0.7)',
-                borderRadius: '8px',
-              }}
-            >
-              <span style={{ color: '#c084fc', fontFamily: 'monospace' }}>OP_MARGIN_CALC (0x74)</span>
-              <span style={{ color: '#cbd5e1' }}>
-                Validates notional {formatUsd(notional)}, computes trader margin {formatUsd(margin)} &amp; LP margin {formatUsd(margin)}
+          <div className="flex flex-col gap-3 font-mono text-xs">
+            <div className="p-3 bg-[#FAFAFA] border-2 border-black flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-[2px_2px_0px_0px_#000000]">
+              <span className="bg-black text-[#00E5FF] font-mono text-[11px] font-black px-2 py-1 border border-black shrink-0">
+                OP_MARGIN_CALC (0x74)
+              </span>
+              <span className="text-gray-700 text-[11px] sm:text-right">
+                Validates notional {formatUsd(notional)}, computes trader margin {formatUsd(margin)} &amp; LP counter-margin
               </span>
             </div>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '8px 12px',
-                background: 'rgba(15, 23, 42, 0.7)',
-                borderRadius: '8px',
-              }}
-            >
-              <span style={{ color: '#c084fc', fontFamily: 'monospace' }}>OP_FUNDING_CALC (0x75)</span>
-              <span style={{ color: '#cbd5e1' }}>
+
+            <div className="p-3 bg-[#FAFAFA] border-2 border-black flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-[2px_2px_0px_0px_#000000]">
+              <span className="bg-black text-[#FFE600] font-mono text-[11px] font-black px-2 py-1 border border-black shrink-0">
+                OP_FUNDING_CALC (0x75)
+              </span>
+              <span className="text-gray-700 text-[11px] sm:text-right">
                 Computes OI skew-based rate adjustment against 8h funding interval
               </span>
             </div>
