@@ -59,17 +59,17 @@ export const SharedCoverage: React.FC = () => {
       description: 'PMM RFQ maker liquidity for spot token swaps. Zero gas wasted on unexecuted maker orders.',
     },
     {
-      id: 'continuity',
-      name: 'Continuity Basis Vaults',
-      category: 'Structured Products',
-      badge: 'Continuity Track',
+      id: 'aave_lending',
+      name: 'Aave v3 Money Market',
+      category: 'Lending & Yield',
+      badge: 'Collateral Base',
       committedDepth: remainingCapital,
-      utilizedDepth: simulatedPulls.filter((p) => p.app === 'Continuity').reduce((a, b) => a + b.amount, 0),
+      utilizedDepth: simulatedPulls.filter((p) => p.app === 'Aave').reduce((a, b) => a + b.amount, 0),
       baseYieldApy: 4.25,
-      appYieldApy: 11.2,
-      icon: '🛡️',
+      appYieldApy: 4.25,
+      icon: '👻',
       status: 'active',
-      description: 'Automated delta-neutral funding rate arbitrage and structured yield harvesting.',
+      description: 'Native interest-bearing aUSDC supply yield while simultaneously acting as 1inch Aqua backing collateral.',
     },
   ];
 
@@ -98,201 +98,130 @@ export const SharedCoverage: React.FC = () => {
   const capitalSavings = totalVirtualCoverage - baseCapital;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div className="flex flex-col gap-6 font-headline">
       {/* 1. Header Banner & Thesis */}
-      <div
-        style={{
-          background: 'linear-gradient(135deg, rgba(13, 20, 36, 0.9) 0%, rgba(19, 27, 46, 0.9) 100%)',
-          border: '1px solid rgba(0, 240, 255, 0.25)',
-          borderRadius: '20px',
-          padding: '28px',
-          boxShadow: '0 12px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(0, 240, 255, 0.1)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '16px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-              <span style={{ fontSize: '1.6rem' }}>🛡️</span>
-              <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#f8fafc', fontWeight: 800 }}>
+      <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6">
+        <div className="flex flex-wrap justify-between items-start gap-4 pb-4 border-b-2 border-black mb-5">
+          <div className="max-w-2xl">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">🛡️</span>
+              <h2 className="text-xl md:text-2xl font-black text-black uppercase tracking-tight">
                 1inch Aqua Shared Liquidity Layer
               </h2>
-              <span
-                style={{
-                  background: 'rgba(0, 240, 255, 0.15)',
-                  color: '#00f0ff',
-                  border: '1px solid rgba(0, 240, 255, 0.3)',
-                  padding: '2px 8px',
-                  borderRadius: '6px',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                }}
-              >
+              <span className="bg-[#FFE600] border-2 border-black font-mono text-[10px] font-black px-2 py-0.5 text-black uppercase shadow-[1px_1px_0px_0px_#000000]">
                 Zero-Lockup Architecture
               </span>
             </div>
-            <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.9rem', maxWidth: '780px', lineHeight: 1.5 }}>
-              In traditional DeFi, liquidity is fragmented into isolated silos (e.g. $50k in GMX is locked and cannot be used in 1inch Spot).
-              With <strong>1inch Aqua</strong>, LP Grimace holds <strong>{formatUsd(baseCapital)} aUSDC</strong> in their own wallet, earning <strong>4.25% Aave v3 supply yield</strong> while simultaneously committing that exact same capital across <strong>3 distinct protocols</strong>!
+            <p className="text-gray-700 font-mono text-xs leading-relaxed">
+              In traditional DeFi, liquidity is fragmented into isolated silos (e.g. $50k in an isolated vault cannot be used in 1inch Spot).
+              With <strong className="text-black">1inch Aqua</strong>, LP Grimace holds <strong className="text-black font-black">{formatUsd(baseCapital)} aUSDC</strong> in their own wallet, earning <strong className="text-[#006d32] font-black">4.25% Aave v3 supply yield</strong> while simultaneously committing that exact same capital across <strong className="text-black font-black">3 distinct protocols</strong>!
             </p>
           </div>
 
           {/* Quick Metrics Badge */}
-          <div
-            style={{
-              background: 'rgba(15, 23, 42, 0.8)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '12px',
-              padding: '14px 20px',
-              textAlign: 'right',
-            }}
-          >
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div className="bg-[#FAFAFA] border-2 border-black p-4 text-right shadow-[3px_3px_0px_0px_#000000] shrink-0">
+            <div className="font-mono text-[10px] text-gray-500 uppercase font-bold tracking-wider">
               Effective Multiplier
             </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#00f0ff', fontFamily: 'monospace' }}>
+            <div className="font-mono text-3xl md:text-4xl font-black text-black my-0.5">
               {efficiencyMultiplier}x
             </div>
-            <span style={{ fontSize: '0.75rem', color: '#10b981' }}>
+            <span className="font-mono text-xs font-bold text-[#006d32]">
               +{formatUsd(capitalSavings)} Capital Freed
             </span>
           </div>
         </div>
 
         {/* Live Capital Slicing Bar */}
-        <div style={{ marginTop: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '8px' }}>
-            <span style={{ color: '#cbd5e1' }}>
-              Grimace Wallet Capital: <strong style={{ color: '#f8fafc', fontFamily: 'monospace' }}>{formatUsd(remainingCapital)} Available</strong>
+        <div>
+          <div className="flex justify-between items-center font-mono text-xs mb-2">
+            <span className="text-gray-700">
+              Grimace Wallet Capital: <strong className="text-black font-black">{formatUsd(remainingCapital)} Available</strong>
             </span>
-            <span style={{ color: '#94a3b8' }}>
+            <span className="font-bold text-black">
               {simulatedPulls.length > 0 ? `${formatUsd(totalPulled)} Pulled via Aqua` : '100% Unencumbered'}
             </span>
           </div>
-          <div
-            style={{
-              height: '10px',
-              background: '#1e293b',
-              borderRadius: '999px',
-              overflow: 'hidden',
-              display: 'flex',
-            }}
-          >
+
+          <div className="w-full h-7 bg-[#FAFAFA] border-2 border-black flex items-stretch p-0.5 gap-0.5 shadow-[2px_2px_0px_0px_#000000]">
             <div
-              style={{
-                width: `${(remainingCapital / baseCapital) * 100}%`,
-                background: 'linear-gradient(90deg, #10b981 0%, #00f0ff 100%)',
-                transition: 'width 0.4s ease',
-              }}
-            />
-            <div
-              style={{
-                width: `${(totalPulled / baseCapital) * 100}%`,
-                background: 'linear-gradient(90deg, #f43f5e 0%, #e11d48 100%)',
-                transition: 'width 0.4s ease',
-              }}
-            />
+              style={{ width: `${(remainingCapital / baseCapital) * 100}%` }}
+              className="bg-[#00F076] border border-black flex items-center justify-center font-mono text-[10px] font-black text-black transition-all duration-300 overflow-hidden whitespace-nowrap"
+            >
+              {remainingCapital > 0 ? `AVAILABLE: ${formatUsd(remainingCapital)}` : ''}
+            </div>
+            {totalPulled > 0 && (
+              <div
+                style={{ width: `${(totalPulled / baseCapital) * 100}%` }}
+                className="bg-[#FF3366] border border-black flex items-center justify-center font-mono text-[10px] font-black text-white transition-all duration-300 overflow-hidden whitespace-nowrap"
+              >
+                PULLED: {formatUsd(totalPulled)}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* 2. Connected Application Nodes */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#f8fafc', fontWeight: 800 }}>
+        <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
+          <h3 className="text-xl font-black text-black uppercase tracking-tight">
             Simultaneously Covered Protocols
           </h3>
-          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+          <span className="font-mono text-xs text-gray-600 bg-white border border-black px-2 py-0.5 shadow-[1px_1px_0px_0px_#000000]">
             Shared via 1inch Aqua Registry ({shortenAddress(AQUA_REGISTRY_ADDRESS)})
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {apps.map((app) => (
             <div
               key={app.id}
-              style={{
-                background: '#0d1424',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '16px',
-                padding: '24px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-                transition: 'transform 0.2s ease, border-color 0.2s ease',
-              }}
+              className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 flex flex-col justify-between"
             >
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div
-                      style={{
-                        width: '42px',
-                        height: '42px',
-                        borderRadius: '10px',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '1.3rem',
-                      }}
-                    >
+                <div className="flex justify-between items-start pb-3 border-b-2 border-black mb-3 gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 bg-[#FAFAFA] border-2 border-black flex items-center justify-center text-xl shadow-[2px_2px_0px_0px_#000000] shrink-0">
                       {app.icon}
                     </div>
                     <div>
-                      <h4 style={{ margin: 0, fontSize: '1.05rem', color: '#f8fafc', fontWeight: 700 }}>
+                      <h4 className="text-base font-black text-black uppercase tracking-tight">
                         {app.name}
                       </h4>
-                      <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{app.category}</span>
+                      <span className="font-mono text-[11px] text-gray-500 uppercase block">
+                        {app.category}
+                      </span>
                     </div>
                   </div>
-                  <span
-                    style={{
-                      fontSize: '0.7rem',
-                      background: 'rgba(0, 240, 255, 0.12)',
-                      color: '#00f0ff',
-                      padding: '2px 8px',
-                      borderRadius: '6px',
-                      fontWeight: 600,
-                    }}
-                  >
+                  <span className="bg-[#00E5FF] border border-black font-mono text-[9px] font-black px-1.5 py-0.5 text-black uppercase shadow-[1px_1px_0px_0px_#000000] shrink-0">
                     {app.badge}
                   </span>
                 </div>
 
-                <p style={{ color: '#94a3b8', fontSize: '0.825rem', lineHeight: 1.5, marginBottom: '18px' }}>
+                <p className="text-gray-700 font-mono text-xs leading-relaxed mb-4">
                   {app.description}
                 </p>
 
                 {/* Depth & Yield Info */}
-                <div
-                  style={{
-                    background: 'rgba(15, 23, 42, 0.8)',
-                    borderRadius: '10px',
-                    padding: '12px 14px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '8px',
-                    fontSize: '0.8rem',
-                    marginBottom: '18px',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#94a3b8' }}>Available JIT Depth</span>
-                    <span style={{ color: '#00f0ff', fontWeight: 700, fontFamily: 'monospace' }}>
+                <div className="bg-[#FAFAFA] border-2 border-black p-3 flex flex-col gap-2 font-mono text-xs mb-4 shadow-[2px_2px_0px_0px_#000000]">
+                  <div className="flex justify-between text-gray-700">
+                    <span>Available JIT Depth</span>
+                    <span className="font-black text-black">
                       {formatUsd(app.committedDepth)}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#94a3b8' }}>Utilized / Pulled</span>
-                    <span style={{ color: app.utilizedDepth > 0 ? '#f43f5e' : '#64748b', fontFamily: 'monospace', fontWeight: 600 }}>
+                  <div className="flex justify-between text-gray-700">
+                    <span>Utilized / Pulled</span>
+                    <span className={`font-black ${
+                      app.utilizedDepth > 0 ? 'text-[#d9044b]' : 'text-gray-500'
+                    }`}>
                       {formatUsd(app.utilizedDepth)}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#94a3b8' }}>Effective Combined APY</span>
-                    <span style={{ color: '#10b981', fontWeight: 700, fontFamily: 'monospace' }}>
+                  <div className="flex justify-between text-gray-700">
+                    <span>Combined APY</span>
+                    <span className="font-black text-[#006d32]">
                       {app.baseYieldApy}% Aave + {app.appYieldApy}% Fees
                     </span>
                   </div>
@@ -300,62 +229,37 @@ export const SharedCoverage: React.FC = () => {
               </div>
 
               {/* Action: Simulate Pull */}
-              <div>
-                <button
-                  onClick={() => handleSimulatePull(app.name.split(' ')[0], 5000)}
-                  disabled={remainingCapital < 5000}
-                  style={{
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    color: '#f8fafc',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    cursor: remainingCapital < 5000 ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  ⚡ Simulate {formatUsd(5000)} AQUA.pull()
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => handleSimulatePull(app.name.split(' ')[0], 5000)}
+                disabled={remainingCapital < 5000}
+                className="w-full h-11 bg-[#FFE600] hover:bg-[#ffe100] text-black border-2 border-black font-headline font-black text-xs uppercase px-3 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1.5"
+              >
+                <span>⚡</span>
+                <span>Simulate {formatUsd(5000)} AQUA.pull()</span>
+              </button>
             </div>
           ))}
         </div>
       </div>
 
       {/* 3. Interactive JIT Event Log & Simulation Monitor */}
-      <div
-        style={{
-          background: '#0d1424',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '16px',
-          padding: '24px',
-          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+      <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6">
+        <div className="flex flex-wrap justify-between items-center pb-4 border-b-2 border-black mb-4 gap-3">
           <div>
-            <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#f8fafc', fontWeight: 800 }}>
+            <h4 className="text-xl font-black text-black uppercase tracking-tight">
               Live 1inch Aqua Pull Audit Log
             </h4>
-            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+            <span className="font-mono text-xs text-gray-600">
               Real-time trace of atomic token pulls across connected decentralized protocols
             </span>
           </div>
+
           {simulatedPulls.length > 0 && (
             <button
+              type="button"
               onClick={handleResetSimulation}
-              style={{
-                background: 'transparent',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '6px',
-                padding: '4px 10px',
-                color: '#94a3b8',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-              }}
+              className="bg-white hover:bg-gray-100 text-black border-2 border-black font-mono text-xs font-bold px-3 py-1 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-transform"
             >
               Reset Simulation
             </button>
@@ -363,66 +267,39 @@ export const SharedCoverage: React.FC = () => {
         </div>
 
         {activeSimulation && (
-          <div
-            style={{
-              padding: '10px 14px',
-              borderRadius: '8px',
-              background: 'rgba(0, 240, 255, 0.1)',
-              border: '1px solid rgba(0, 240, 255, 0.3)',
-              color: '#00f0ff',
-              fontSize: '0.85rem',
-              marginBottom: '14px',
-            }}
-          >
+          <div className="p-3 bg-[#00E5FF] border-2 border-black text-black font-mono text-xs font-bold mb-4 shadow-[2px_2px_0px_0px_#000000] animate-pulse">
             {activeSimulation}
           </div>
         )}
 
         {simulatedPulls.length === 0 ? (
-          <div
-            style={{
-              textAlign: 'center',
-              padding: '32px 16px',
-              background: 'rgba(15, 23, 42, 0.4)',
-              borderRadius: '10px',
-              border: '1px dashed rgba(255, 255, 255, 0.08)',
-              color: '#94a3b8',
-              fontSize: '0.85rem',
-            }}
-          >
+          <div className="text-center py-10 px-4 bg-[#FAFAFA] border-2 border-dashed border-black font-mono text-xs text-gray-600">
             No active pulls yet. Click &quot;Simulate AQUA.pull()&quot; on any application card above to observe real-time multi-app JIT liquidity drawdown!
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="flex flex-col gap-2 font-mono text-xs">
             {simulatedPulls.map((pull, idx) => (
               <div
                 key={idx}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  background: 'rgba(15, 23, 42, 0.7)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
-                  borderRadius: '8px',
-                  padding: '10px 14px',
-                  fontSize: '0.825rem',
-                  fontFamily: 'monospace',
-                }}
+                className="bg-[#FAFAFA] border-2 border-black p-3 flex flex-wrap justify-between items-center gap-2 shadow-[2px_2px_0px_0px_#000000]"
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ color: '#10b981' }}>EVENT:</span>
-                  <span style={{ color: '#00f0ff' }}>AQUA.pull()</span>
-                  <span style={{ color: '#94a3b8' }}>from</span>
-                  <span style={{ color: '#f8fafc', fontWeight: 600 }}>Grimace ({shortenAddress(DEMO_ROLES.lp.address)})</span>
-                  <span style={{ color: '#94a3b8' }}>by</span>
-                  <span style={{ color: '#c084fc', fontWeight: 600 }}>{pull.app}</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="bg-black text-[#00F076] font-mono text-[10px] font-black px-1.5 py-0.5 border border-black">
+                    EVENT: AQUA.pull()
+                  </span>
+                  <span className="text-gray-600">from</span>
+                  <span className="font-bold text-black">Grimace ({shortenAddress(DEMO_ROLES.lp.address)})</span>
+                  <span className="text-gray-600">by</span>
+                  <span className="bg-[#FFE600] text-black font-bold px-1.5 py-0.5 border border-black">
+                    {pull.app}
+                  </span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <span style={{ color: '#f43f5e', fontWeight: 700 }}>
+                <div className="flex items-center gap-3">
+                  <span className="font-black text-sm text-[#d9044b]">
                     -{formatUsd(pull.amount)} aUSDC
                   </span>
-                  <span style={{ color: '#64748b', fontSize: '0.75rem' }}>{pull.time}</span>
+                  <span className="text-gray-500 text-[11px]">{pull.time}</span>
                 </div>
               </div>
             ))}
@@ -431,42 +308,38 @@ export const SharedCoverage: React.FC = () => {
       </div>
 
       {/* 4. Hackathon Track Integrations Matrix */}
-      <div
-        style={{
-          background: '#0d1424',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '16px',
-          padding: '24px',
-        }}
-      >
-        <h4 style={{ margin: '0 0 16px', fontSize: '1.1rem', color: '#f8fafc', fontWeight: 800 }}>
+      <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6">
+        <h4 className="text-xl font-black text-black uppercase tracking-tight pb-3 border-b-2 border-black mb-4">
           ETHGlobal Hackathon Track Alignment
         </h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-          <div style={{ background: 'rgba(15, 23, 42, 0.7)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-            <div style={{ color: '#00f0ff', fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+          <div className="bg-[#FAFAFA] border-2 border-black p-4 shadow-[2px_2px_0px_0px_#000000]">
+            <div className="font-headline font-black text-sm text-black uppercase mb-1.5 flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-[#00E5FF] border border-black"></span>
               1. 1inch: &quot;Build an Aqua App&quot;
             </div>
-            <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.8rem', lineHeight: 1.5 }}>
+            <p className="text-gray-700 leading-relaxed">
               First-ever Perpetual Futures DEX native to 1inch Aqua. Eliminates fragmented LP vaults by JIT-pulling counterparty margin only upon position execution.
             </p>
           </div>
 
-          <div style={{ background: 'rgba(15, 23, 42, 0.7)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-            <div style={{ color: '#c084fc', fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px' }}>
+          <div className="bg-[#FAFAFA] border-2 border-black p-4 shadow-[2px_2px_0px_0px_#000000]">
+            <div className="font-headline font-black text-sm text-black uppercase mb-1.5 flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-[#FFE600] border border-black"></span>
               2. 1inch: &quot;SwapVM Custom Opcode&quot;
             </div>
-            <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.8rem', lineHeight: 1.5 }}>
-              Implemented custom SwapVM opcodes: <code>0x74</code> (Margin Calculation) and <code>0x75</code> (Open Interest Skew Funding Rate) for trustless on-chain execution.
+            <p className="text-gray-700 leading-relaxed">
+              Implemented custom SwapVM opcodes: <code className="bg-black text-[#FFE600] px-1 font-bold">0x74</code> (Margin Calculation) and <code className="bg-black text-[#FFE600] px-1 font-bold">0x75</code> (OI Skew Funding Rate) for trustless on-chain execution.
             </p>
           </div>
 
-          <div style={{ background: 'rgba(15, 23, 42, 0.7)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-            <div style={{ color: '#10b981', fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px' }}>
-              3. Continuity &amp; The Graph Tracks
+          <div className="bg-[#FAFAFA] border-2 border-black p-4 shadow-[2px_2px_0px_0px_#000000]">
+            <div className="font-headline font-black text-sm text-black uppercase mb-1.5 flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-[#00F076] border border-black"></span>
+              3. Aave v3 Money Market &amp; Indexing
             </div>
-            <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.8rem', lineHeight: 1.5 }}>
-              Continuous multi-protocol capital efficiency with Aave v3 supply yield and subgraphs indexing position lifetimes, liquidations, and keeper bounties.
+            <p className="text-gray-700 leading-relaxed">
+              Non-custodial multi-protocol capital efficiency with native Aave v3 supply yield and subgraphs indexing position lifetimes, liquidations, and keeper bounties.
             </p>
           </div>
         </div>
