@@ -258,39 +258,20 @@ export const KeeperConsole: React.FC = () => {
   const liquidatableCount = monitoredPositions.filter((p) => p.isLiquidatable).length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="flex flex-col gap-6 font-headline">
       {/* Role Alert Banner if not Ronald */}
       {role !== 'keeper' && (
-        <div
-          style={{
-            background: 'rgba(147, 51, 234, 0.1)',
-            border: '1px solid rgba(147, 51, 234, 0.3)',
-            borderRadius: '12px',
-            padding: '12px 18px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span>🤖</span>
-            <span style={{ fontSize: '0.85rem', color: '#d8b4fe' }}>
-              You are currently viewing as <strong>{role.toUpperCase()}</strong>. Switch to <strong>Keeper (Ronald)</strong> to execute 1-click keeper liquidations.
+        <div className="bg-[#FFE600] border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-4 flex flex-wrap items-center justify-between gap-4 text-black">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">🤖</span>
+            <span className="text-sm font-bold">
+              You are currently viewing as <span className="bg-black text-[#FFE600] px-1.5 py-0.5 font-mono text-xs">{role.toUpperCase()}</span>. Switch to <strong>Keeper (Ronald)</strong> to execute 1-click keeper liquidations.
             </span>
           </div>
           <button
+            type="button"
             onClick={() => setRole('keeper')}
-            style={{
-              background: '#9333ea',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '6px 14px',
-              color: '#ffffff',
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
+            className="bg-black text-[#FFE600] hover:bg-gray-900 border-2 border-black font-headline font-black text-xs uppercase px-4 py-2 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-transform"
           >
             Switch to Ronald
           </button>
@@ -298,341 +279,253 @@ export const KeeperConsole: React.FC = () => {
       )}
 
       {/* TOP: Keeper Metrics & Fast-Forward Bar */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '20px',
-        }}
-      >
-        {/* Metric 1: Keeper Reward Rate */}
-        <div
-          style={{
-            background: '#0d1424',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '16px',
-            padding: '20px',
-            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-          }}
-        >
-          <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Keeper Bounty Rate
-          </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#f8fafc', fontFamily: 'monospace', margin: '4px 0' }}>
-            1.00%
-          </div>
-          <span style={{ fontSize: '0.8rem', color: '#10b981' }}>
-            100 bps fee paid directly on each liquidation
-          </span>
-        </div>
-
-        {/* Metric 2: Earned Rewards */}
-        <div
-          style={{
-            background: '#0d1424',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
-            borderRadius: '16px',
-            padding: '20px',
-            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-          }}
-        >
-          <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Total Bounties Claimed
-          </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#10b981', fontFamily: 'monospace', margin: '4px 0' }}>
-            +{formatUsd(totalRewardsClaimed)}
-          </div>
-          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-            Keeper Ronald (0x90F7...b906)
-          </span>
-        </div>
-
-        {/* Metric 3: Time Warp Tool */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, #0d1424 0%, #171128 100%)',
-            border: '1px solid rgba(147, 51, 234, 0.25)',
-            borderRadius: '16px',
-            padding: '20px',
-            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Metric 1: Keeper Bounty Rate */}
+        <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 flex flex-col justify-between">
           <div>
-            <div style={{ fontSize: '0.75rem', color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>
-              Anvil Time Controller
-            </div>
-            <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px' }}>
-              Advance EVM timestamp by 8 hours to test funding settlement epochs.
+            <span className="font-mono text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">
+              Keeper Bounty Rate
+            </span>
+            <div className="font-mono text-3xl font-black text-black">
+              1.00%
             </div>
           </div>
+          <span className="font-mono text-[11px] text-gray-600 mt-2">
+            100 bps notional reward on successful liquidation
+          </span>
+        </div>
+
+        {/* Metric 2: Liquidatable Positions Radar */}
+        <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 flex flex-col justify-between">
+          <div>
+            <span className="font-mono text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">
+              Liquidation Radar
+            </span>
+            <div className={`font-mono text-3xl font-black ${
+              liquidatableCount > 0 ? 'text-[#d9044b]' : 'text-[#006d32]'
+            }`}>
+              {liquidatableCount} Positions
+            </div>
+          </div>
+          <span className="font-mono text-[11px] text-gray-600 mt-2">
+            Positions breaching 5.0% maintenance margin
+          </span>
+        </div>
+
+        {/* Metric 3: Keeper Rewards Claimed */}
+        <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 flex flex-col justify-between">
+          <div>
+            <span className="font-mono text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">
+              Rewards Claimed
+            </span>
+            <div className="font-mono text-3xl font-black text-[#006d32]">
+              {formatUsd(totalRewardsClaimed)}
+            </div>
+          </div>
+          <span className="font-mono text-[11px] text-gray-600 mt-2">
+            Collateral bounty paid in aUSDC
+          </span>
+        </div>
+
+        {/* Metric 4: Anvil Time Warp Machine */}
+        <div className="bg-[#FFE600] border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 flex flex-col justify-between text-black">
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <span className="font-mono text-xs font-black uppercase tracking-wider">
+                Anvil Time Warp
+              </span>
+              <span className="bg-black text-[#FFE600] font-mono text-[9px] font-bold px-1.5 py-0.5 border border-black">
+                DEBUG
+              </span>
+            </div>
+            <p className="font-mono text-[11px] leading-tight text-gray-800 mb-3">
+              Fast-forward block timestamp by +8h to trigger SwapVM 0x75 funding epochs.
+            </p>
+          </div>
+
           <button
+            type="button"
             onClick={handleFastForwardTime}
             disabled={executingType === 'warp'}
-            style={{
-              marginTop: '12px',
-              background: 'rgba(147, 51, 234, 0.15)',
-              border: '1px solid rgba(147, 51, 234, 0.4)',
-              borderRadius: '8px',
-              padding: '8px 14px',
-              color: '#c084fc',
-              fontSize: '0.85rem',
-              fontWeight: 700,
-              cursor: executingType === 'warp' ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-            }}
+            id="btn-fast-forward-time"
+            className="w-full h-10 bg-black text-[#FFE600] hover:bg-gray-900 border-2 border-black font-headline font-black text-xs uppercase shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer flex items-center justify-center gap-2 transition-transform disabled:opacity-50"
           >
             <span>⏩</span>
-            <span>Fast-Forward +8 Hours</span>
+            <span>{executingType === 'warp' ? 'Warping Time...' : 'Warp Time (+8 Hours)'}</span>
           </button>
-        </div>
-      </div>
-
-      {/* Demo Liquidation Tip Banner */}
-      <div
-        style={{
-          background: 'rgba(0, 240, 255, 0.05)',
-          border: '1px solid rgba(0, 240, 255, 0.15)',
-          borderRadius: '12px',
-          padding: '14px 18px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          fontSize: '0.85rem',
-          color: '#cbd5e1',
-          lineHeight: 1.5,
-        }}
-      >
-        <span style={{ fontSize: '1.2rem' }}>💡</span>
-        <div>
-          <strong style={{ color: '#00f0ff' }}>Judging &amp; Demo Walkthrough:</strong> Want to trigger a live liquidation? Use the <strong>⚡ Simulate Price</strong> button in the top bar, click <strong>-10% Liquidate ($54k)</strong> to crash the mark price. The position below will turn red and become eligible for instant liquidation!
         </div>
       </div>
 
       {/* Action Notification Toast */}
       {statusMessage && (
         <div
-          style={{
-            padding: '12px 16px',
-            borderRadius: '10px',
-            fontSize: '0.85rem',
-            lineHeight: 1.4,
-            background:
-              statusMessage.type === 'success'
-                ? 'rgba(16, 185, 129, 0.12)'
-                : statusMessage.type === 'error'
-                ? 'rgba(244, 63, 94, 0.12)'
-                : 'rgba(0, 240, 255, 0.12)',
-            border: `1px solid ${
-              statusMessage.type === 'success'
-                ? 'rgba(16, 185, 129, 0.3)'
-                : statusMessage.type === 'error'
-                ? 'rgba(244, 63, 94, 0.3)'
-                : 'rgba(0, 240, 255, 0.3)'
-            }`,
-            color:
-              statusMessage.type === 'success'
-                ? '#10b981'
-                : statusMessage.type === 'error'
-                ? '#f43f5e'
-                : '#00f0ff',
-          }}
+          className={`p-3.5 border-2 border-black shadow-[3px_3px_0px_0px_#000000] font-mono text-xs font-bold leading-snug ${
+            statusMessage.type === 'success'
+              ? 'bg-[#00F076] text-black'
+              : statusMessage.type === 'error'
+              ? 'bg-[#FF3366] text-white'
+              : 'bg-[#00E5FF] text-black'
+          }`}
         >
           {statusMessage.text}
         </div>
       )}
 
-      {/* Monitored Positions Table */}
-      <div
-        style={{
-          background: '#0d1424',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '16px',
-          padding: '24px',
-          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h4 style={{ margin: 0, fontSize: '1.15rem', color: '#f8fafc', fontWeight: 800 }}>
-              Protocol Position Radar
-            </h4>
+      {/* BOTTOM SECTION: Protocol Positions Radar Table */}
+      <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6">
+        <div className="flex flex-wrap items-center justify-between pb-4 border-b-2 border-black mb-5 gap-3">
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-black text-black uppercase tracking-tight">
+              Protocol Positions Health Radar
+            </h3>
             <span
-              style={{
-                fontSize: '0.75rem',
-                background: liquidatableCount > 0 ? 'rgba(244, 63, 94, 0.2)' : 'rgba(0, 240, 255, 0.12)',
-                color: liquidatableCount > 0 ? '#f43f5e' : '#00f0ff',
-                padding: '2px 8px',
-                borderRadius: '999px',
-                fontWeight: 700,
-                border: `1px solid ${liquidatableCount > 0 ? 'rgba(244, 63, 94, 0.4)' : 'rgba(0, 240, 255, 0.2)'}`,
-              }}
+              className={`font-mono text-xs font-black px-2.5 py-0.5 border-2 border-black shadow-[2px_2px_0px_0px_#000000] uppercase ${
+                liquidatableCount > 0
+                  ? 'bg-[#FF3366] text-white animate-pulse'
+                  : 'bg-[#00F076] text-black'
+              }`}
             >
-              {liquidatableCount > 0 ? `🚨 ${liquidatableCount} LIQUIDATABLE` : `${monitoredPositions.length} Monitored`}
+              {liquidatableCount > 0 ? `🚨 ${liquidatableCount} LIQUIDATABLE` : `${monitoredPositions.length} MONITORED`}
             </span>
-            {isScanning && <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>scanning...</span>}
+            {isScanning && (
+              <span className="font-mono text-xs text-gray-500 animate-pulse">
+                SCANNING...
+              </span>
+            )}
           </div>
 
           <button
+            type="button"
             onClick={scanPositions}
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
-              padding: '6px 12px',
-              color: '#94a3b8',
-              cursor: 'pointer',
-              fontSize: '0.8rem',
-            }}
+            title="Scan on-chain positions"
+            className="w-8 h-8 bg-white hover:bg-gray-100 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none flex items-center justify-center font-bold text-sm cursor-pointer"
           >
-            🔄 Scan
+            🔄
           </button>
         </div>
 
         {monitoredPositions.length === 0 ? (
-          <div
-            style={{
-              textAlign: 'center',
-              padding: '40px 20px',
-              background: 'rgba(15, 23, 42, 0.4)',
-              borderRadius: '12px',
-              border: '1px dashed rgba(255, 255, 255, 0.08)',
-              color: '#94a3b8',
-            }}
-          >
-            No active positions found in protocol to monitor. Open a position in the Trade tab to test keeper functions.
+          <div className="text-center py-12 px-4 bg-[#FAFAFA] border-2 border-dashed border-black">
+            <div className="text-4xl mb-3">📡</div>
+            <h4 className="text-lg font-black text-black uppercase tracking-tight mb-1">
+              No Active Positions Found
+            </h4>
+            <p className="text-gray-600 font-mono text-xs max-w-md mx-auto leading-relaxed">
+              No positions currently active on-chain to monitor. Open a position in the Trade tab to test keeper liquidation and funding bots.
+            </p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+          <div className="overflow-x-auto border-2 border-black bg-white shadow-[3px_3px_0px_0px_#000000]">
+            <table className="w-full border-collapse text-left font-mono text-xs">
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8' }}>
-                  <th style={{ padding: '12px 8px' }}>Position</th>
-                  <th style={{ padding: '12px 8px' }}>Trader</th>
-                  <th style={{ padding: '12px 8px' }}>Notional</th>
-                  <th style={{ padding: '12px 8px' }}>Margin Health</th>
-                  <th style={{ padding: '12px 8px' }}>1% Keeper Bounty</th>
-                  <th style={{ padding: '12px 8px' }}>Funding Status</th>
-                  <th style={{ padding: '12px 8px', textAlign: 'right' }}>Actions</th>
+                <tr className="bg-black text-[#FFE600] uppercase font-bold text-[11px] tracking-wider border-b-2 border-black">
+                  <th className="py-3 px-3 border-r border-gray-800">Position</th>
+                  <th className="py-3 px-3 border-r border-gray-800">Trader</th>
+                  <th className="py-3 px-3 border-r border-gray-800">Notional</th>
+                  <th className="py-3 px-3 border-r border-gray-800">Margin Health</th>
+                  <th className="py-3 px-3 border-r border-gray-800">1% Keeper Bounty</th>
+                  <th className="py-3 px-3 border-r border-gray-800">Funding Status</th>
+                  <th className="py-3 px-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {monitoredPositions.map((pos) => (
+                {monitoredPositions.map((pos, idx) => (
                   <tr
                     key={pos.id}
-                    style={{
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
-                      background: pos.isLiquidatable ? 'rgba(244, 63, 94, 0.08)' : 'transparent',
-                      transition: 'background 0.3s ease',
-                    }}
+                    className={`border-b-2 border-black transition-colors ${
+                      pos.isLiquidatable
+                        ? 'bg-[#FFF0F2] '
+                        : idx % 2 === 0
+                        ? 'bg-white'
+                        : 'bg-[#FAFAFA]'
+                    } hover:bg-[#FFFBEA]`}
                   >
-                    <td style={{ padding: '12px 8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {/* 1. Position ID & Side */}
+                    <td className="py-3 px-3 border-r border-black">
+                      <div className="flex items-center gap-2">
                         <span
-                          style={{
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            fontWeight: 700,
-                            fontSize: '0.75rem',
-                            background: pos.isLong ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
-                            color: pos.isLong ? '#10b981' : '#f43f5e',
-                          }}
+                          className={`font-black text-[10px] px-1.5 py-0.5 border border-black uppercase ${
+                            pos.isLong
+                              ? 'bg-[#00F076] text-black'
+                              : 'bg-[#FF3366] text-white'
+                          }`}
                         >
                           {pos.isLong ? 'LONG' : 'SHORT'}
                         </span>
-                        <span style={{ fontWeight: 700, color: '#f8fafc' }}>BTC #{pos.id}</span>
+                        <span className="font-bold text-black">BTC #{pos.id}</span>
                       </div>
                     </td>
 
-                    <td style={{ padding: '12px 8px', fontFamily: 'monospace', color: '#cbd5e1' }}>
+                    {/* 2. Trader */}
+                    <td className="py-3 px-3 border-r border-black font-bold text-black">
                       {shortenAddress(pos.trader)}
                     </td>
 
-                    <td style={{ padding: '12px 8px', fontWeight: 700, fontFamily: 'monospace', color: '#f8fafc' }}>
+                    {/* 3. Notional */}
+                    <td className="py-3 px-3 border-r border-black font-black text-black">
                       {formatUsd(pos.notional)}
                     </td>
 
-                    <td style={{ padding: '12px 8px' }}>
+                    {/* 4. Margin Health */}
+                    <td className="py-3 px-3 border-r border-black">
                       <span
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          background: pos.isLiquidatable
-                            ? 'rgba(244, 63, 94, 0.25)'
+                        className={`inline-block font-black text-[10px] px-2 py-0.5 border border-black uppercase ${
+                          pos.isLiquidatable
+                            ? 'bg-[#FF3366] text-white animate-pulse'
                             : pos.marginRatio < 8
-                            ? 'rgba(245, 158, 11, 0.2)'
-                            : 'rgba(16, 185, 129, 0.15)',
-                          color: pos.isLiquidatable ? '#f43f5e' : pos.marginRatio < 8 ? '#f59e0b' : '#10b981',
-                        }}
+                            ? 'bg-[#FFE600] text-black'
+                            : 'bg-[#00F076] text-black'
+                        }`}
                       >
-                        {pos.isLiquidatable ? '🔴 LIQUIDATABLE' : `${pos.marginRatio.toFixed(1)}% Ratio`}
+                        {pos.isLiquidatable ? '🔴 LIQUIDATABLE' : `${pos.marginRatio.toFixed(1)}% RATIO`}
                       </span>
                     </td>
 
-                    <td style={{ padding: '12px 8px', color: '#10b981', fontWeight: 700, fontFamily: 'monospace' }}>
+                    {/* 5. 1% Keeper Bounty */}
+                    <td className="py-3 px-3 border-r border-black font-black text-[#006d32]">
                       +{formatUsd(pos.keeperRewardEst)} aUSDC
                     </td>
 
-                    <td style={{ padding: '12px 8px' }}>
+                    {/* 6. Funding Status */}
+                    <td className="py-3 px-3 border-r border-black">
                       <span
-                        style={{
-                          fontSize: '0.75rem',
-                          color: pos.isFundingReady ? '#c084fc' : '#94a3b8',
-                          fontWeight: pos.isFundingReady ? 700 : 400,
-                        }}
+                        className={`font-bold text-[11px] ${
+                          pos.isFundingReady
+                            ? 'bg-[#FFE600] text-black px-1.5 py-0.5 border border-black font-black'
+                            : 'text-gray-600'
+                        }`}
                       >
-                        {pos.isFundingReady ? '⚡ Eligible (≥8h)' : 'Running (8h epoch)'}
+                        {pos.isFundingReady ? '⚡ ELIGIBLE (≥8H)' : 'RUNNING (8H EPOCH)'}
                       </span>
                     </td>
 
-                    <td style={{ padding: '12px 8px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                        {pos.isLiquidatable ? (
+                    {/* 7. Actions */}
+                    <td className="py-3 px-3 text-right">
+                      <div className="flex gap-2 justify-end items-center">
+                        {pos.isLiquidatable && (
                           <button
+                            type="button"
                             onClick={() => handleLiquidate(pos)}
                             disabled={executingId === pos.id}
-                            style={{
-                              background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)',
-                              border: 'none',
-                              borderRadius: '6px',
-                              padding: '6px 12px',
-                              color: '#ffffff',
-                              fontWeight: 800,
-                              fontSize: '0.75rem',
-                              cursor: executingId === pos.id ? 'not-allowed' : 'pointer',
-                              boxShadow: '0 2px 10px rgba(244, 63, 94, 0.4)',
-                            }}
+                            id={`btn-liquidate-${pos.id}`}
+                            className="bg-[#FF3366] hover:bg-[#e62957] text-white font-headline font-black text-xs uppercase px-3 py-1.5 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-colors disabled:opacity-50"
                           >
                             {executingId === pos.id && executingType === 'liquidate'
-                              ? 'Liquidating...'
-                              : `⚡ Liquidate (${formatUsd(pos.keeperRewardEst)})`}
+                              ? 'LIQUIDATING...'
+                              : `⚡ LIQUIDATE (${formatUsd(pos.keeperRewardEst)})`}
                           </button>
-                        ) : null}
+                        )}
 
                         <button
+                          type="button"
                           onClick={() => handleSettleFunding(pos)}
                           disabled={executingId === pos.id}
-                          style={{
-                            background: 'rgba(147, 51, 234, 0.12)',
-                            border: '1px solid rgba(147, 51, 234, 0.3)',
-                            borderRadius: '6px',
-                            padding: '6px 10px',
-                            color: '#c084fc',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            cursor: executingId === pos.id ? 'not-allowed' : 'pointer',
-                          }}
+                          id={`btn-settle-funding-${pos.id}`}
+                          className="bg-white hover:bg-gray-100 text-black font-headline font-black text-xs uppercase px-2.5 py-1.5 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-colors disabled:opacity-50"
                         >
                           {executingId === pos.id && executingType === 'funding'
-                            ? 'Settling...'
-                            : 'Settle Funding'}
+                            ? 'SETTLING...'
+                            : 'SETTLE FUNDING'}
                         </button>
                       </div>
                     </td>
