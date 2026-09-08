@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { useWeb3 } from '../context/Web3Context';
 import {
@@ -258,39 +258,20 @@ export const LPConsole: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="flex flex-col gap-6 font-headline">
       {/* Role Notice Banner (if not in LP role) */}
       {role !== 'lp' && (
-        <div
-          style={{
-            background: 'rgba(59, 130, 246, 0.1)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            borderRadius: '12px',
-            padding: '12px 18px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span>💡</span>
-            <span style={{ fontSize: '0.85rem', color: '#93c5fd' }}>
-              You are currently viewing as <strong>{role.toUpperCase()}</strong>. Switch to <strong>LP Maker (Grimace)</strong> for 1-click LP quote operations.
+        <div className="bg-[#FFE600] border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-4 flex flex-wrap items-center justify-between gap-4 text-black">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">💡</span>
+            <span className="text-sm font-bold">
+              You are currently viewing as <span className="bg-black text-[#FFE600] px-1.5 py-0.5 font-mono text-xs">{role.toUpperCase()}</span>. Switch to <strong>LP Maker (Grimace)</strong> for 1-click LP quote operations.
             </span>
           </div>
           <button
+            type="button"
             onClick={() => setRole('lp')}
-            style={{
-              background: '#2563eb',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '6px 14px',
-              color: '#ffffff',
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
+            className="bg-black text-[#FFE600] hover:bg-gray-900 border-2 border-black font-headline font-black text-xs uppercase px-4 py-2 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-transform"
           >
             Switch to Grimace
           </button>
@@ -298,73 +279,43 @@ export const LPConsole: React.FC = () => {
       )}
 
       {/* TOP SECTION: Aave v3 Yield & Capital Efficiency Monitor */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '20px',
-        }}
-      >
-        {/* Card 1: Aave v3 Supply Yield */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, #0d1424 0%, #111d38 100%)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Aave v3 Yield Accrual
-            </span>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                background: 'rgba(16, 185, 129, 0.15)',
-                color: '#10b981',
-                padding: '2px 8px',
-                borderRadius: '6px',
-                fontWeight: 700,
-              }}
-            >
-              {apy}% Supply APY
-            </span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Card 1: Aave v3 Yield Accrual */}
+        <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-center pb-3 border-b-2 border-black mb-4">
+              <span className="font-mono text-xs font-black text-black uppercase tracking-wider">
+                Aave v3 Yield Accrual
+              </span>
+              <span className="bg-[#00F076] border-2 border-black font-mono text-[10px] font-bold px-2 py-0.5 text-black uppercase shadow-[1px_1px_0px_0px_#000000]">
+                {apy}% Supply APY
+              </span>
+            </div>
+
+            <div className="font-mono text-3xl md:text-4xl font-black text-[#006d32] mb-1">
+              +${accruedYield.toFixed(4)}
+            </div>
+            <p className="text-gray-600 font-mono text-xs mb-4 leading-relaxed">
+              Live interest accrued in Grimace&apos;s wallet while JIT quotes remain active on 1inch Aqua.
+            </p>
           </div>
 
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#10b981', fontFamily: 'monospace', marginBottom: '4px' }}>
-            +${accruedYield.toFixed(4)}
-          </div>
-          <p style={{ margin: '0 0 16px', fontSize: '0.8rem', color: '#94a3b8' }}>
-            Live interest accrued in Grimace&apos;s wallet while JIT quotes remain active on 1inch Aqua.
-          </p>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '8px',
-              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-              paddingTop: '12px',
-              fontSize: '0.75rem',
-            }}
-          >
-            <div>
-              <span style={{ color: '#64748b' }}>Daily</span>
-              <div style={{ color: '#f8fafc', fontWeight: 600, fontFamily: 'monospace' }}>
+          <div className="grid grid-cols-3 gap-2.5 pt-3 border-t-2 border-black">
+            <div className="bg-[#FAFAFA] border-2 border-black p-2.5 shadow-[2px_2px_0px_0px_#000000]">
+              <span className="block font-mono text-[10px] text-gray-500 uppercase">Daily</span>
+              <div className="font-mono font-black text-xs md:text-sm text-black mt-0.5">
                 +${dailyInterest.toFixed(2)}
               </div>
             </div>
-            <div>
-              <span style={{ color: '#64748b' }}>Monthly</span>
-              <div style={{ color: '#f8fafc', fontWeight: 600, fontFamily: 'monospace' }}>
+            <div className="bg-[#FAFAFA] border-2 border-black p-2.5 shadow-[2px_2px_0px_0px_#000000]">
+              <span className="block font-mono text-[10px] text-gray-500 uppercase">Monthly</span>
+              <div className="font-mono font-black text-xs md:text-sm text-black mt-0.5">
                 +${monthlyInterest.toFixed(2)}
               </div>
             </div>
-            <div>
-              <span style={{ color: '#64748b' }}>Annual</span>
-              <div style={{ color: '#f8fafc', fontWeight: 600, fontFamily: 'monospace' }}>
+            <div className="bg-[#FAFAFA] border-2 border-black p-2.5 shadow-[2px_2px_0px_0px_#000000]">
+              <span className="block font-mono text-[10px] text-gray-500 uppercase">Annual</span>
+              <div className="font-mono font-black text-xs md:text-sm text-black mt-0.5">
                 +${annualInterest.toFixed(2)}
               </div>
             </div>
@@ -372,52 +323,39 @@ export const LPConsole: React.FC = () => {
         </div>
 
         {/* Card 2: Capital Efficiency Comparison */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, #0d1424 0%, #15162e 100%)',
-            border: '1px solid rgba(0, 240, 255, 0.25)',
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Capital Efficiency Multiplier
-            </span>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                background: 'rgba(0, 240, 255, 0.15)',
-                color: '#00f0ff',
-                padding: '2px 8px',
-                borderRadius: '6px',
-                fontWeight: 700,
-              }}
-            >
-              2.8x Efficiency
-            </span>
+        <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-center pb-3 border-b-2 border-black mb-4">
+              <span className="font-mono text-xs font-black text-black uppercase tracking-wider">
+                Capital Efficiency Multiplier
+              </span>
+              <span className="bg-[#00E5FF] border-2 border-black font-mono text-[10px] font-bold px-2 py-0.5 text-black uppercase shadow-[1px_1px_0px_0px_#000000]">
+                2.8x Efficiency
+              </span>
+            </div>
+
+            <div className="flex items-baseline gap-3 mb-3">
+              <span className="font-mono text-3xl md:text-4xl font-black text-black">
+                280%
+              </span>
+              <span className="font-mono text-xs text-gray-600 uppercase font-bold">
+                vs Traditional Vaults
+              </span>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '10px' }}>
-            <span style={{ fontSize: '2rem', fontWeight: 800, color: '#00f0ff', fontFamily: 'monospace' }}>
-              280%
-            </span>
-            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>vs Traditional Vaults</span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
-              <span>Standard Isolated Vaults</span>
-              <span style={{ color: '#f43f5e', fontWeight: 600 }}>0% Money Market Yield</span>
+          <div className="flex flex-col gap-2 font-mono text-xs pt-3 border-t-2 border-black">
+            <div className="flex justify-between items-center p-2 bg-[#FAFAFA] border border-black">
+              <span className="text-gray-700">Standard Isolated Vaults</span>
+              <span className="font-black text-[#d9044b]">0% Money Market Yield</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
-              <span>Flyte JIT Aqua Sourcing</span>
-              <span style={{ color: '#10b981', fontWeight: 600 }}>4.25% Aave + Spread Fees</span>
+            <div className="flex justify-between items-center p-2 bg-[#FAFAFA] border border-black">
+              <span className="text-gray-700">Flyte JIT Aqua Sourcing</span>
+              <span className="font-black text-[#006d32]">4.25% Aave + Spread Fees</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
-              <span>Liquidity Mobility</span>
-              <span style={{ color: '#00f0ff', fontWeight: 600 }}>Zero Lockup (Instant Withdrawal)</span>
+            <div className="flex justify-between items-center p-2 bg-[#FAFAFA] border border-black">
+              <span className="text-gray-700">Liquidity Mobility</span>
+              <span className="font-black text-black">Zero Lockup (Instant Withdrawal)</span>
             </div>
           </div>
         </div>
@@ -426,81 +364,38 @@ export const LPConsole: React.FC = () => {
       {/* Action Notification Toast */}
       {statusMessage && (
         <div
-          style={{
-            padding: '12px 16px',
-            borderRadius: '10px',
-            fontSize: '0.85rem',
-            lineHeight: 1.4,
-            background:
-              statusMessage.type === 'success'
-                ? 'rgba(16, 185, 129, 0.12)'
-                : statusMessage.type === 'error'
-                ? 'rgba(244, 63, 94, 0.12)'
-                : 'rgba(0, 240, 255, 0.12)',
-            border: `1px solid ${
-              statusMessage.type === 'success'
-                ? 'rgba(16, 185, 129, 0.3)'
-                : statusMessage.type === 'error'
-                ? 'rgba(244, 63, 94, 0.3)'
-                : 'rgba(0, 240, 255, 0.3)'
-            }`,
-            color:
-              statusMessage.type === 'success'
-                ? '#10b981'
-                : statusMessage.type === 'error'
-                ? '#f43f5e'
-                : '#00f0ff',
-          }}
+          className={`p-3.5 border-2 border-black shadow-[3px_3px_0px_0px_#000000] font-mono text-xs font-bold leading-snug ${
+            statusMessage.type === 'success'
+              ? 'bg-[#00F076] text-black'
+              : statusMessage.type === 'error'
+              ? 'bg-[#FF3366] text-white'
+              : 'bg-[#00E5FF] text-black'
+          }`}
         >
           {statusMessage.text}
         </div>
       )}
 
       {/* MIDDLE SECTION: Interactive Quote Shipper Form */}
-      <div
-        style={{
-          background: '#0d1424',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '16px',
-          padding: '24px',
-          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6">
+        <div className="flex flex-wrap items-center justify-between pb-4 border-b-2 border-black mb-5 gap-3">
           <div>
-            <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#f8fafc', fontWeight: 800 }}>
+            <h3 className="text-xl font-black text-black uppercase tracking-tight">
               Ship JIT Liquidity Strategy to 1inch Aqua
             </h3>
-            <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: '0.85rem' }}>
+            <p className="text-gray-600 font-mono text-xs mt-1">
               Publish your orderbook quote parameters. Capital remains in your wallet earning Aave yield until matched.
             </p>
           </div>
-          <span
-            style={{
-              fontSize: '0.75rem',
-              background: 'rgba(147, 51, 234, 0.15)',
-              color: '#c084fc',
-              border: '1px solid rgba(147, 51, 234, 0.3)',
-              padding: '4px 10px',
-              borderRadius: '8px',
-              fontWeight: 700,
-            }}
-          >
+          <span className="bg-black text-[#FFE600] font-mono text-xs font-bold px-2.5 py-1 border border-black shadow-[2px_2px_0px_0px_#000000]">
             aqua.ship(...)
           </span>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '18px',
-            marginBottom: '20px',
-          }}
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
           {/* 1. Max Notional Depth */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px', fontWeight: 600 }}>
+            <label className="block font-mono text-xs font-bold text-black uppercase mb-1.5">
               Max Notional Depth (aUSDC)
             </label>
             <input
@@ -510,63 +405,37 @@ export const LPConsole: React.FC = () => {
               max="500000"
               value={maxNotionalInput}
               onChange={(e) => setMaxNotionalInput(e.target.value)}
-              style={{
-                width: '100%',
-                background: 'rgba(15, 23, 42, 0.9)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '8px',
-                padding: '10px 12px',
-                color: '#f8fafc',
-                fontFamily: 'monospace',
-                fontSize: '1rem',
-                fontWeight: 700,
-              }}
+              className="w-full bg-[#FAFAFA] border-2 border-black p-2.5 font-mono text-sm font-bold text-black focus:outline-none focus:bg-white"
             />
           </div>
 
-          {/* 2. Max Leverage Offered */}
+          {/* 2. Max Permitted Leverage */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px', fontWeight: 600 }}>
-              Max Leverage Offered
+            <label className="block font-mono text-xs font-bold text-black uppercase mb-1.5">
+              Max Allowed Leverage
             </label>
             <select
               value={maxLeverage}
               onChange={(e) => setMaxLeverage(parseInt(e.target.value))}
-              style={{
-                width: '100%',
-                background: 'rgba(15, 23, 42, 0.9)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '8px',
-                padding: '10px 12px',
-                color: '#f8fafc',
-                fontSize: '0.9rem',
-              }}
+              className="w-full bg-[#FAFAFA] border-2 border-black p-2.5 font-mono text-sm font-bold text-black focus:outline-none focus:bg-white cursor-pointer"
             >
-              <option value="2">2x Maximum</option>
-              <option value="5">5x Maximum</option>
-              <option value="10">10x Maximum (Standard)</option>
+              <option value="5">5x Leverage</option>
+              <option value="10">10x Leverage (Standard)</option>
+              <option value="20">20x Leverage (Aggressive)</option>
             </select>
           </div>
 
-          {/* 3. Bid/Ask Spread (bps) */}
+          {/* 3. Quoted Spread */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px', fontWeight: 600 }}>
-              Maker Spread Fee
+            <label className="block font-mono text-xs font-bold text-black uppercase mb-1.5">
+              Quoted Spread (Basis Points)
             </label>
             <select
               value={spreadBps}
               onChange={(e) => setSpreadBps(parseInt(e.target.value))}
-              style={{
-                width: '100%',
-                background: 'rgba(15, 23, 42, 0.9)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '8px',
-                padding: '10px 12px',
-                color: '#f8fafc',
-                fontSize: '0.9rem',
-              }}
+              className="w-full bg-[#FAFAFA] border-2 border-black p-2.5 font-mono text-sm font-bold text-black focus:outline-none focus:bg-white cursor-pointer"
             >
-              <option value="5">5 bps (0.05% competitive)</option>
+              <option value="5">5 bps (0.05% tight)</option>
               <option value="10">10 bps (0.10% standard)</option>
               <option value="25">25 bps (0.25% high vol)</option>
             </select>
@@ -574,21 +443,13 @@ export const LPConsole: React.FC = () => {
 
           {/* 4. Side Mask */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px', fontWeight: 600 }}>
+            <label className="block font-mono text-xs font-bold text-black uppercase mb-1.5">
               Permitted Trader Sides
             </label>
             <select
               value={sideMask}
               onChange={(e) => setSideMask(parseInt(e.target.value))}
-              style={{
-                width: '100%',
-                background: 'rgba(15, 23, 42, 0.9)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '8px',
-                padding: '10px 12px',
-                color: '#f8fafc',
-                fontSize: '0.9rem',
-              }}
+              className="w-full bg-[#FAFAFA] border-2 border-black p-2.5 font-mono text-sm font-bold text-black focus:outline-none focus:bg-white cursor-pointer"
             >
               <option value="3">Both Longs &amp; Shorts (Mask = 3)</option>
               <option value="1">Longs Only (Mask = 1)</option>
@@ -598,23 +459,14 @@ export const LPConsole: React.FC = () => {
         </div>
 
         {/* Buttons */}
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div className="flex flex-wrap gap-3">
           {!isAquaAllowanceSufficient ? (
             <button
               type="button"
               onClick={handleApproveAqua}
               disabled={isApproving}
               id="btn-approve-aqua"
-              style={{
-                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                border: 'none',
-                borderRadius: '10px',
-                padding: '12px 24px',
-                color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-              }}
+              className="h-12 bg-[#00E5FF] hover:bg-[#00cbe2] text-black border-2 border-black font-headline font-black text-sm uppercase px-6 tracking-wider shadow-[3px_3px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer"
             >
               {isApproving ? 'Approving 1inch Aqua...' : '1. Approve aUSDC for 1inch Aqua'}
             </button>
@@ -624,17 +476,7 @@ export const LPConsole: React.FC = () => {
               onClick={handleShipStrategy}
               disabled={isShipping}
               id="btn-ship-strategy"
-              style={{
-                background: 'linear-gradient(135deg, #00f0ff 0%, #0070f3 100%)',
-                border: 'none',
-                borderRadius: '10px',
-                padding: '12px 24px',
-                color: '#0a0e1a',
-                fontWeight: 800,
-                fontSize: '0.9rem',
-                cursor: isShipping ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 16px rgba(0, 240, 255, 0.3)',
-              }}
+              className="h-12 bg-[#00F076] hover:bg-[#00d669] text-black border-2 border-black font-headline font-black text-sm uppercase px-6 tracking-wider shadow-[3px_3px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isShipping ? 'Shipping to Aqua...' : 'Ship Strategy to 1inch Aqua'}
             </button>
@@ -643,110 +485,81 @@ export const LPConsole: React.FC = () => {
       </div>
 
       {/* BOTTOM SECTION: Active Shipped Quotes Inspector */}
-      <div
-        style={{
-          background: '#0d1424',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '16px',
-          padding: '24px',
-          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#f8fafc', fontWeight: 800 }}>
+      <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6">
+        <div className="flex flex-wrap justify-between items-center pb-4 border-b-2 border-black mb-5 gap-3">
+          <h4 className="text-xl font-black text-black uppercase tracking-tight">
             Active Shipped Strategies on 1inch Aqua
           </h4>
-          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+          <span className="font-mono text-xs text-gray-600 font-bold bg-[#FAFAFA] border border-black px-2 py-1">
             Registry: {shortenAddress(AQUA_REGISTRY_ADDRESS)}
           </span>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+        <div className="overflow-x-auto border-2 border-black bg-white shadow-[3px_3px_0px_0px_#000000]">
+          <table className="w-full border-collapse text-left font-mono text-xs">
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8' }}>
-                <th style={{ padding: '12px 8px' }}>Strategy Hash</th>
-                <th style={{ padding: '12px 8px' }}>Maker (LP)</th>
-                <th style={{ padding: '12px 8px' }}>Committed Depth</th>
-                <th style={{ padding: '12px 8px' }}>Max Lev</th>
-                <th style={{ padding: '12px 8px' }}>Spread</th>
-                <th style={{ padding: '12px 8px' }}>Permitted Sides</th>
-                <th style={{ padding: '12px 8px' }}>Status</th>
-                <th style={{ padding: '12px 8px', textAlign: 'right' }}>Action</th>
+              <tr className="bg-black text-[#FFE600] uppercase font-bold text-[11px] tracking-wider border-b-2 border-black">
+                <th className="py-3 px-3 border-r border-gray-800">Strategy Hash</th>
+                <th className="py-3 px-3 border-r border-gray-800">Maker (LP)</th>
+                <th className="py-3 px-3 border-r border-gray-800">Committed Depth</th>
+                <th className="py-3 px-3 border-r border-gray-800">Max Lev</th>
+                <th className="py-3 px-3 border-r border-gray-800">Spread</th>
+                <th className="py-3 px-3 border-r border-gray-800">Permitted Sides</th>
+                <th className="py-3 px-3 border-r border-gray-800">Status</th>
+                <th className="py-3 px-3 text-right">Action</th>
               </tr>
             </thead>
             <tbody>
-              {shippedQuotes.map((q) => (
+              {shippedQuotes.map((q, idx) => (
                 <tr
                   key={q.strategyHash}
-                  style={{
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
-                    opacity: q.status === 'docked' ? 0.5 : 1,
-                  }}
+                  className={`border-b-2 border-black transition-colors ${
+                    q.status === 'docked' ? 'opacity-50 ' : ''
+                  }${idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'} hover:bg-[#FFFBEA]`}
                 >
-                  <td style={{ padding: '12px 8px', fontFamily: 'monospace', color: '#00f0ff' }}>
+                  <td className="py-3 px-3 border-r border-black font-bold text-[#006d32]">
                     {shortenAddress(q.strategyHash, 6)}
                   </td>
-                  <td style={{ padding: '12px 8px', fontFamily: 'monospace', color: '#f8fafc' }}>
+                  <td className="py-3 px-3 border-r border-black font-bold text-black">
                     {shortenAddress(q.maker)}
                   </td>
-                  <td style={{ padding: '12px 8px', fontWeight: 700, color: '#f8fafc', fontFamily: 'monospace' }}>
+                  <td className="py-3 px-3 border-r border-black font-black text-black">
                     {formatUsd(q.maxNotional)} aUSDC
                   </td>
-                  <td style={{ padding: '12px 8px', color: '#cbd5e1' }}>
+                  <td className="py-3 px-3 border-r border-black text-gray-800">
                     {q.maxLeverage}x
                   </td>
-                  <td style={{ padding: '12px 8px', color: '#cbd5e1' }}>
+                  <td className="py-3 px-3 border-r border-black text-gray-800">
                     {q.spreadBps} bps ({(q.spreadBps / 100).toFixed(2)}%)
                   </td>
-                  <td style={{ padding: '12px 8px' }}>
-                    <span
-                      style={{
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        background: 'rgba(255, 255, 255, 0.06)',
-                        color: '#cbd5e1',
-                      }}
-                    >
+                  <td className="py-3 px-3 border-r border-black">
+                    <span className="font-bold text-[11px] bg-white border border-black px-1.5 py-0.5 shadow-[1px_1px_0px_0px_#000000]">
                       {q.sideMask === 3 ? 'Long & Short' : q.sideMask === 1 ? 'Longs Only' : 'Shorts Only'}
                     </span>
                   </td>
-                  <td style={{ padding: '12px 8px' }}>
+                  <td className="py-3 px-3 border-r border-black">
                     <span
-                      style={{
-                        padding: '2px 8px',
-                        borderRadius: '6px',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        background: q.status === 'active' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
-                        color: q.status === 'active' ? '#10b981' : '#f43f5e',
-                      }}
+                      className={`font-black text-[10px] px-2 py-0.5 border border-black uppercase ${
+                        q.status === 'active'
+                          ? 'bg-[#00F076] text-black'
+                          : 'bg-[#FF3366] text-white'
+                      }`}
                     >
                       {q.status === 'active' ? '🟢 ACTIVE' : 'DOCKED'}
                     </span>
                   </td>
-                  <td style={{ padding: '12px 8px', textAlign: 'right' }}>
+                  <td className="py-3 px-3 text-right">
                     {q.status === 'active' ? (
                       <button
+                        type="button"
                         onClick={() => handleDockStrategy(q)}
                         disabled={dockingHash === q.strategyHash}
-                        style={{
-                          background: 'rgba(244, 63, 94, 0.12)',
-                          border: '1px solid rgba(244, 63, 94, 0.3)',
-                          borderRadius: '6px',
-                          padding: '4px 10px',
-                          color: '#f43f5e',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                        }}
+                        className="bg-[#FF3366] hover:bg-[#e62957] text-white font-headline font-black text-xs uppercase px-2.5 py-1 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-colors disabled:opacity-50"
                       >
                         {dockingHash === q.strategyHash ? 'Docking...' : 'Dock / Revoke'}
                       </button>
                     ) : (
-                      <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Revoked</span>
+                      <span className="text-[11px] font-bold text-gray-400 uppercase">Revoked</span>
                     )}
                   </td>
                 </tr>
