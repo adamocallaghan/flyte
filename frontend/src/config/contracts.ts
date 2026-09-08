@@ -15,8 +15,9 @@ export const WETH_ADDRESS = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1';
 
 // Default / Configurable Contract Addresses
 // Can be overridden in UI settings or via process.env
-export const DEFAULT_PERP_APP_ADDRESS = process.env.NEXT_PUBLIC_PERP_APP_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3';
-export const DEFAULT_ORACLE_ADDRESS = process.env.NEXT_PUBLIC_ORACLE_ADDRESS || '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512';
+export const DEFAULT_PERP_APP_ADDRESS = process.env.NEXT_PUBLIC_PERP_APP_ADDRESS || '0xa8e7a7ce16370a5e61390c5731103e02c9d244bf';
+export const DEFAULT_ORACLE_ADDRESS = process.env.NEXT_PUBLIC_ORACLE_ADDRESS || '0x3e07ca5c26a3b03d3ac6d14b43a68a89d2092477';
+export const DEFAULT_ROUTER_ADDRESS = process.env.NEXT_PUBLIC_ROUTER_ADDRESS || '0x649d8ffa083bb2b73830d3c9333e92d56861328c';
 
 export interface DemoRoleConfig {
   id: 'trader' | 'lp' | 'keeper';
@@ -33,7 +34,7 @@ export const DEMO_ROLES: Record<'trader' | 'lp' | 'keeper', DemoRoleConfig> = {
     name: 'Trader (Hamburglar)',
     badge: 'Trader',
     address: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
-    privateKey: '0x59c6995e92da95f142c179c0cB7BEAf6470b1801CE95765711643797087472',
+    privateKey: '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d',
     description: 'Opens and manages leveraged perpetual futures positions with aUSDC collateral',
   },
   lp: {

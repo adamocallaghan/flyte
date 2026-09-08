@@ -119,12 +119,26 @@ export const TraderTerminal: React.FC = () => {
       };
 
       if (appContract && appContract.runner) {
-        // Direct on-chain execution: openPosition(strategy, isLong, notional, leverage)
+        // Direct on-chain execution with dynamic gas estimation + 30% safety buffer
+        let gasLimit: bigint | undefined;
+        try {
+          const est = await (appContract as any)['openPosition((address,address,uint256,uint256,uint256,uint8,uint256),bool,uint256,uint256)'].estimateGas(
+            strategy,
+            isLong,
+            notionalRaw,
+            BigInt(leverage)
+          );
+          gasLimit = (est * 130n) / 100n;
+        } catch {
+          gasLimit = 1_200_000n;
+        }
+
         const tx = await (appContract as any)['openPosition((address,address,uint256,uint256,uint256,uint8,uint256),bool,uint256,uint256)'](
           strategy,
           isLong,
           notionalRaw,
-          BigInt(leverage)
+          BigInt(leverage),
+          gasLimit ? { gasLimit } : {}
         );
         const receipt = await tx.wait();
         await refreshBalances();

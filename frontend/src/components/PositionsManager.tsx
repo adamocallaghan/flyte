@@ -108,7 +108,15 @@ export const PositionsManager: React.FC = () => {
           contractToCall = appContract.connect(traderWallet) as any;
         }
 
-        const tx = await (contractToCall as any).closePosition(pos.id);
+        let gasLimit: bigint | undefined;
+        try {
+          const est = await (contractToCall as any).closePosition.estimateGas(pos.id);
+          gasLimit = (est * 130n) / 100n;
+        } catch {
+          gasLimit = 600_000n;
+        }
+
+        const tx = await (contractToCall as any).closePosition(pos.id, gasLimit ? { gasLimit } : {});
         const receipt = await tx.wait();
 
         setActionStatus({

@@ -8,6 +8,8 @@ import {
   shortenAddress,
   DEMO_ROLES,
   A_USDC_ADDRESS,
+  AAVE_POOL_ADDRESS,
+  USDC_ADDRESS,
   LOCAL_RPC_URL,
   formatUsd,
 } from '../config/contracts';
@@ -31,6 +33,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
     setOracleAddress,
     resetToDefaultAddresses,
     connectBrowserWallet,
+    switchOrAddAnvilNetwork,
     refreshBalances,
   } = useWeb3();
 
@@ -51,10 +54,12 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
     try {
       if (isFork) {
         const anvilProv = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
-        // 10 ETH in hex (10 * 1e18 = 0x8ac7230489e80000)
-        await anvilProv.send('anvil_setBalance', [account, '0x8ac7230489e80000']);
+        const currentBal = await anvilProv.getBalance(account);
+        // Add 10 ETH to current balance
+        const newBal = currentBal + ethers.parseEther('10');
+        await anvilProv.send('anvil_setBalance', [account, ethers.toBeHex(newBal)]);
         await refreshBalances();
-        setCheatcodeStatus('✅ 10 ETH dealt to your wallet!');
+        setCheatcodeStatus('✅ 10 ETH added to your wallet!');
       } else {
         setCheatcodeStatus('Cheatcodes only active on local Anvil fork');
       }
@@ -67,24 +72,43 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
     }
   };
 
-  // Quick Anvil Cheatcode: Faucet 5k aUSDC from Grimace LP to Active Account
+  // Quick Anvil Cheatcode: Direct Mint 5k aUSDC to Active Account via Aave v3 supply
   const handleFaucetAUSDC = async () => {
     if (!account) return;
     setIsFauceting(true);
     try {
       if (isFork) {
         const anvilProv = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
-        // Transfer 5,000 aUSDC from Grimace
-        const lpWallet = new ethers.Wallet(DEMO_ROLES.lp.privateKey, anvilProv);
-        const aUsdcContract = new ethers.Contract(
-          A_USDC_ADDRESS,
-          ['function transfer(address to, uint256 amount) returns (bool)'],
-          lpWallet
+        const amount = ethers.parseUnits('5000', 6);
+        const GMX_VAULT = '0x489ee077994B6658eAfA855C308275EAd8097C4A';
+
+        // 1. Impersonate high-liquidity USDC vault on Arbitrum fork
+        await anvilProv.send('anvil_impersonateAccount', [GMX_VAULT]);
+        await anvilProv.send('anvil_setBalance', [GMX_VAULT, '0x8AC7230489E80000']);
+
+        const vaultSigner = await anvilProv.getSigner(GMX_VAULT);
+        const usdc = new ethers.Contract(
+          USDC_ADDRESS,
+          ['function approve(address spender, uint256 amount) returns (bool)'],
+          vaultSigner
         );
-        const tx = await aUsdcContract.transfer(account, ethers.parseUnits('5000', 6));
-        await tx.wait();
+        const aavePool = new ethers.Contract(
+          AAVE_POOL_ADDRESS,
+          ['function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode)'],
+          vaultSigner
+        );
+
+        // 2. Approve Aave Pool and supply USDC on behalf of the active account
+        const appTx = await usdc.approve(AAVE_POOL_ADDRESS, amount);
+        await appTx.wait();
+
+        const supplyTx = await aavePool.supply(USDC_ADDRESS, amount, account, 0);
+        await supplyTx.wait();
+
+        await anvilProv.send('anvil_stopImpersonatingAccount', [GMX_VAULT]);
+
         await refreshBalances();
-        setCheatcodeStatus('✅ 5,000 aUSDC transferred to your wallet!');
+        setCheatcodeStatus('✅ 5,000 aUSDC minted directly to your wallet!');
       } else {
         setCheatcodeStatus('Cheatcodes only active on local Anvil fork');
       }
@@ -376,6 +400,19 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                   {account ? shortenAddress(account) : 'Disconnected'}
                 </span>
               </div>
+
+              {/* Add / Switch to Anvil Network Button for MetaMask */}
+              <button
+                type="button"
+                onClick={async () => {
+                  await switchOrAddAnvilNetwork();
+                  setRoleModalOpen(false);
+                }}
+                className="w-full h-10 border-2 border-black bg-[#FFE600] hover:bg-[#ffe100] text-black font-bold font-mono text-xs uppercase shadow-[2px_2px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center justify-center gap-2 cursor-pointer mt-1"
+                title="Switch MetaMask to local Anvil network (Chain ID 31337)"
+              >
+                <span>🦊</span> Switch MetaMask to Anvil (31337)
+              </button>
             </div>
           </div>
         </div>

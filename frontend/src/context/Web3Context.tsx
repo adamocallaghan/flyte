@@ -81,6 +81,7 @@ export interface Web3ContextType {
 
   // Actions
   connectBrowserWallet: () => Promise<void>;
+  switchOrAddAnvilNetwork: (targetChainId?: number) => Promise<void>;
 }
 
 const Web3Context = createContext<Web3ContextType | null>(null);
@@ -103,13 +104,23 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
   // Balances
   const [balances, setBalances] = useState<WalletBalances>(DEFAULT_BALANCES);
 
-  // Load custom addresses from localStorage if available
+  // Load custom addresses from localStorage if available (ignoring stale placeholders)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedApp = localStorage.getItem('flyte_app_address');
       const storedOracle = localStorage.getItem('flyte_oracle_address');
-      if (storedApp && ethers.isAddress(storedApp)) setAppAddressState(storedApp);
-      if (storedOracle && ethers.isAddress(storedOracle)) setOracleAddressState(storedOracle);
+      if (storedApp && ethers.isAddress(storedApp) && storedApp !== '0x5FbDB2315678afecb367f032d93F642f64180aa3') {
+        setAppAddressState(storedApp);
+      } else {
+        localStorage.removeItem('flyte_app_address');
+        setAppAddressState(DEFAULT_PERP_APP_ADDRESS);
+      }
+      if (storedOracle && ethers.isAddress(storedOracle) && storedOracle !== '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512') {
+        setOracleAddressState(storedOracle);
+      } else {
+        localStorage.removeItem('flyte_oracle_address');
+        setOracleAddressState(DEFAULT_ORACLE_ADDRESS);
+      }
     }
   }, []);
 
@@ -298,6 +309,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Connect Browser Wallet
+  // Connect Browser Wallet
   const connectBrowserWallet = useCallback(async () => {
     if (typeof window === 'undefined' || !(window as any).ethereum) {
       alert('No browser wallet detected! Please install MetaMask or Rabby.');
@@ -309,6 +321,41 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
     } catch (e: any) {
       console.error('Wallet connection failed:', e);
       setError(e.message || 'Failed to connect wallet');
+    }
+  }, []);
+
+  // Switch or Add Anvil Local Network to MetaMask / Browser Wallet
+  const switchOrAddAnvilNetwork = useCallback(async (targetChainId: number = ANVIL_CHAIN_ID) => {
+    if (typeof window === 'undefined' || !(window as any).ethereum) {
+      alert('No browser wallet detected! Please install MetaMask or Rabby.');
+      return;
+    }
+    const hexChainId = '0x' + targetChainId.toString(16);
+    try {
+      await (window as any).ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: hexChainId }],
+      });
+    } catch (switchError: any) {
+      if (switchError.code === 4902 || switchError.data?.originalError?.code === 4902) {
+        try {
+          await (window as any).ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [
+              {
+                chainId: hexChainId,
+                chainName: 'Anvil (Flyte Local)',
+                rpcUrls: [LOCAL_RPC_URL],
+                nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+              },
+            ],
+          });
+        } catch (addError: any) {
+          console.error('Failed to add Anvil network to wallet:', addError);
+        }
+      } else {
+        console.warn('Network switch failed:', switchError);
+      }
     }
   }, []);
 
@@ -341,6 +388,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
       usdcContract: contracts.usdc,
       aUsdcContract: contracts.aUsdc,
       connectBrowserWallet,
+      switchOrAddAnvilNetwork,
     }),
     [
       account,
@@ -363,6 +411,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
       resetToDefaultAddresses,
       contracts,
       connectBrowserWallet,
+      switchOrAddAnvilNetwork,
     ]
   );
 

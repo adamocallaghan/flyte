@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "anvil:fork": "anvil --fork-url https://arb1.arbitrum.io/rpc --chain-id 31337",
+    "deploy:local": "cd ../contracts && forge script script/DeployLocal.s.sol --rpc-url http://127.0.0.1:8545 --broadcast && node ../frontend/scripts/init_local.js"
   },
   "dependencies": {
     "ethers": "^6.17.0",
