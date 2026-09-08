@@ -145,99 +145,59 @@ export const PositionsManager: React.FC = () => {
     : positions;
 
   return (
-    <div
-      style={{
-        background: '#0d1424',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: '16px',
-        padding: '24px',
-        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-      }}
-    >
+    <div className="w-full bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6 mt-6 font-headline">
       {/* Header & Controls */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px',
-          flexWrap: 'wrap',
-          gap: '12px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#f8fafc', fontWeight: 800 }}>
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b-2 border-black mb-5">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-black text-[#00F076] border-2 border-black flex items-center justify-center font-bold text-base shadow-[2px_2px_0px_0px_#000000]">
+            ⚡
+          </div>
+          <h3 className="text-xl font-black text-black uppercase tracking-tight">
             Active Positions
           </h3>
-          <span
-            style={{
-              fontSize: '0.75rem',
-              background: 'rgba(0, 240, 255, 0.12)',
-              color: '#00f0ff',
-              padding: '2px 8px',
-              borderRadius: '999px',
-              fontWeight: 700,
-            }}
-          >
-            {displayedPositions.length} Open
+          <span className="bg-[#FFE600] border-2 border-black font-mono text-[11px] font-black px-2 py-0.5 text-black shadow-[1px_1px_0px_0px_#000000]">
+            {displayedPositions.length} OPEN
           </span>
-          {isLoading && <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>syncing...</span>}
+          {isLoading && (
+            <span className="font-mono text-xs text-gray-500 animate-pulse">
+              SYNCING...
+            </span>
+          )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div
-            style={{
-              display: 'flex',
-              background: 'rgba(15, 23, 42, 0.8)',
-              padding: '3px',
-              borderRadius: '8px',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-            }}
-          >
+        <div className="flex items-center gap-3">
+          {/* Segmented Filter Toggle */}
+          <div className="flex bg-white border-2 border-black p-0.5 shadow-[2px_2px_0px_0px_#000000]">
             <button
+              type="button"
               onClick={() => setFilterMine(false)}
-              style={{
-                background: !filterMine ? 'rgba(0, 240, 255, 0.15)' : 'transparent',
-                color: !filterMine ? '#00f0ff' : '#94a3b8',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '4px 10px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
+              className={`font-mono text-xs font-bold px-3 py-1 uppercase cursor-pointer transition-colors ${
+                !filterMine
+                  ? 'bg-black text-[#00E5FF]'
+                  : 'bg-transparent text-gray-700 hover:bg-gray-100'
+              }`}
             >
               All Positions
             </button>
             <button
+              type="button"
               onClick={() => setFilterMine(true)}
-              style={{
-                background: filterMine ? 'rgba(0, 240, 255, 0.15)' : 'transparent',
-                color: filterMine ? '#00f0ff' : '#94a3b8',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '4px 10px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
+              className={`font-mono text-xs font-bold px-3 py-1 uppercase cursor-pointer transition-colors ${
+                filterMine
+                  ? 'bg-black text-[#00E5FF]'
+                  : 'bg-transparent text-gray-700 hover:bg-gray-100'
+              }`}
             >
               My Account
             </button>
           </div>
 
+          {/* Refresh Button */}
           <button
+            type="button"
             onClick={fetchPositions}
             title="Refresh positions"
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
-              padding: '6px 10px',
-              color: '#94a3b8',
-              cursor: 'pointer',
-              fontSize: '0.8rem',
-            }}
+            className="w-8 h-8 bg-white hover:bg-gray-100 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none flex items-center justify-center font-bold text-sm cursor-pointer"
           >
             🔄
           </button>
@@ -247,32 +207,13 @@ export const PositionsManager: React.FC = () => {
       {/* Action Notification Toast */}
       {actionStatus && (
         <div
-          style={{
-            marginBottom: '16px',
-            padding: '12px 16px',
-            borderRadius: '10px',
-            fontSize: '0.85rem',
-            lineHeight: 1.4,
-            background:
-              actionStatus.type === 'success'
-                ? 'rgba(16, 185, 129, 0.12)'
-                : actionStatus.type === 'error'
-                ? 'rgba(244, 63, 94, 0.12)'
-                : 'rgba(0, 240, 255, 0.12)',
-            border: `1px solid ${
-              actionStatus.type === 'success'
-                ? 'rgba(16, 185, 129, 0.3)'
-                : actionStatus.type === 'error'
-                ? 'rgba(244, 63, 94, 0.3)'
-                : 'rgba(0, 240, 255, 0.3)'
-            }`,
-            color:
-              actionStatus.type === 'success'
-                ? '#10b981'
-                : actionStatus.type === 'error'
-                ? '#f43f5e'
-                : '#00f0ff',
-          }}
+          className={`mb-5 p-3.5 border-2 border-black shadow-[3px_3px_0px_0px_#000000] font-mono text-xs font-bold leading-snug ${
+            actionStatus.type === 'success'
+              ? 'bg-[#00F076] text-black'
+              : actionStatus.type === 'error'
+              ? 'bg-[#FF3366] text-white'
+              : 'bg-[#00E5FF] text-black'
+          }`}
         >
           {actionStatus.text}
         </div>
@@ -280,41 +221,33 @@ export const PositionsManager: React.FC = () => {
 
       {/* Positions Content */}
       {displayedPositions.length === 0 ? (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '48px 20px',
-            background: 'rgba(15, 23, 42, 0.4)',
-            borderRadius: '12px',
-            border: '1px dashed rgba(255, 255, 255, 0.08)',
-          }}
-        >
-          <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>📊</div>
-          <h4 style={{ margin: '0 0 8px', color: '#f8fafc', fontSize: '1.1rem' }}>
+        <div className="text-center py-12 px-4 bg-[#FAFAFA] border-2 border-dashed border-black">
+          <div className="text-4xl mb-3">📊</div>
+          <h4 className="text-lg font-black text-black uppercase tracking-tight mb-1">
             No Open Positions
           </h4>
-          <p style={{ color: '#94a3b8', fontSize: '0.85rem', maxWidth: '420px', margin: '0 auto', lineHeight: 1.5 }}>
+          <p className="text-gray-600 font-mono text-xs max-w-md mx-auto leading-relaxed">
             Use the order terminal above to open your first 1inch Aqua JIT-leveraged perpetual position!
           </p>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+        <div className="overflow-x-auto border-2 border-black bg-white shadow-[3px_3px_0px_0px_#000000]">
+          <table className="w-full border-collapse text-left font-mono text-xs">
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8' }}>
-                <th style={{ padding: '12px 8px' }}>Position</th>
-                <th style={{ padding: '12px 8px' }}>Size / Notional</th>
-                <th style={{ padding: '12px 8px' }}>Entry Price</th>
-                <th style={{ padding: '12px 8px' }}>Mark Price</th>
-                <th style={{ padding: '12px 8px' }}>Unrealized PnL (ROE)</th>
-                <th style={{ padding: '12px 8px' }}>Margin / Health</th>
-                <th style={{ padding: '12px 8px' }}>Liquidation</th>
-                <th style={{ padding: '12px 8px' }}>Counterparty LP</th>
-                <th style={{ padding: '12px 8px', textAlign: 'right' }}>Action</th>
+              <tr className="bg-black text-[#FFE600] uppercase font-bold text-[11px] tracking-wider border-b-2 border-black">
+                <th className="py-3 px-3 border-r border-gray-800">Position</th>
+                <th className="py-3 px-3 border-r border-gray-800">Size / Notional</th>
+                <th className="py-3 px-3 border-r border-gray-800">Entry Price</th>
+                <th className="py-3 px-3 border-r border-gray-800">Mark Price</th>
+                <th className="py-3 px-3 border-r border-gray-800">Unrealized PnL (ROE)</th>
+                <th className="py-3 px-3 border-r border-gray-800">Margin / Health</th>
+                <th className="py-3 px-3 border-r border-gray-800">Liquidation</th>
+                <th className="py-3 px-3 border-r border-gray-800">Counterparty LP</th>
+                <th className="py-3 px-3 text-right">Action</th>
               </tr>
             </thead>
             <tbody>
-              {displayedPositions.map((pos) => {
+              {displayedPositions.map((pos, idx) => {
                 // PnL Calculation
                 const priceDelta = pos.isLong ? btcPrice - pos.entryPrice : pos.entryPrice - btcPrice;
                 const pnlUsd = (pos.notional * priceDelta) / pos.entryPrice;
@@ -336,134 +269,108 @@ export const PositionsManager: React.FC = () => {
                 return (
                   <tr
                     key={pos.id}
-                    style={{
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
-                      background: 'transparent',
-                      transition: 'background 0.2s ease',
-                    }}
+                    className={`border-b-2 border-black transition-colors ${
+                      idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'
+                    } hover:bg-[#FFFBEA]`}
                   >
                     {/* 1. Position ID & Side */}
-                    <td style={{ padding: '14px 8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <td className="py-3 px-3 border-r border-black">
+                      <div className="flex items-center gap-2">
                         <span
-                          style={{
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            fontWeight: 700,
-                            fontSize: '0.75rem',
-                            background: pos.isLong ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
-                            color: pos.isLong ? '#10b981' : '#f43f5e',
-                            border: `1px solid ${pos.isLong ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
-                          }}
+                          className={`font-black text-[10px] px-1.5 py-0.5 border border-black uppercase ${
+                            pos.isLong
+                              ? 'bg-[#00F076] text-black'
+                              : 'bg-[#FF3366] text-white'
+                          }`}
                         >
                           {pos.isLong ? 'LONG' : 'SHORT'}
                         </span>
-                        <span style={{ fontWeight: 700, color: '#f8fafc' }}>
-                          BTC/USD
-                        </span>
-                        <span style={{ color: '#64748b', fontSize: '0.75rem' }}>#{pos.id}</span>
+                        <span className="font-bold text-black">BTC/USD</span>
+                        <span className="text-gray-500 font-normal">#{pos.id}</span>
                       </div>
                     </td>
 
                     {/* 2. Size & Leverage */}
-                    <td style={{ padding: '14px 8px' }}>
-                      <div style={{ fontWeight: 700, color: '#f8fafc', fontFamily: 'monospace' }}>
+                    <td className="py-3 px-3 border-r border-black">
+                      <div className="font-bold text-black">
                         {formatUsd(pos.notional)}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: '#00f0ff', fontWeight: 600 }}>
-                        {pos.leverage}x Lev • {(pos.notional / btcPrice).toFixed(4)} BTC
+                      <div className="text-[11px] text-gray-700 font-medium">
+                        {pos.leverage}x • {(pos.notional / btcPrice).toFixed(4)} BTC
                       </div>
                     </td>
 
                     {/* 3. Entry Price */}
-                    <td style={{ padding: '14px 8px', fontFamily: 'monospace', color: '#cbd5e1' }}>
+                    <td className="py-3 px-3 border-r border-black text-gray-800">
                       {formatUsd(pos.entryPrice)}
                     </td>
 
                     {/* 4. Mark Price */}
-                    <td style={{ padding: '14px 8px', fontFamily: 'monospace', color: '#f8fafc', fontWeight: 600 }}>
+                    <td className="py-3 px-3 border-r border-black font-bold text-black">
                       {formatUsd(btcPrice)}
                     </td>
 
                     {/* 5. Unrealized PnL (ROE) */}
-                    <td style={{ padding: '14px 8px' }}>
+                    <td className="py-3 px-3 border-r border-black">
                       <div
-                        style={{
-                          fontWeight: 700,
-                          fontFamily: 'monospace',
-                          color: isProfitable ? '#10b981' : '#f43f5e',
-                        }}
+                        className={`font-black text-sm ${
+                          isProfitable ? 'text-[#006d32]' : 'text-[#d9044b]'
+                        }`}
                       >
                         {isProfitable ? `+${formatUsd(pnlUsd)}` : formatUsd(pnlUsd)}
                       </div>
                       <div
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          color: isProfitable ? '#10b981' : '#f43f5e',
-                        }}
+                        className={`text-[11px] font-bold ${
+                          isProfitable ? 'text-[#006d32]' : 'text-[#d9044b]'
+                        }`}
                       >
                         {isProfitable ? `+${roePercent.toFixed(2)}%` : `${roePercent.toFixed(2)}%`}
                       </div>
                     </td>
 
                     {/* 6. Margin & Health */}
-                    <td style={{ padding: '14px 8px' }}>
-                      <div style={{ color: '#cbd5e1', fontFamily: 'monospace' }}>
+                    <td className="py-3 px-3 border-r border-black">
+                      <div className="text-black font-medium">
                         {formatUsd(pos.traderMargin)} aUSDC
                       </div>
                       <span
-                        style={{
-                          fontSize: '0.7rem',
-                          fontWeight: 700,
-                          padding: '1px 6px',
-                          borderRadius: '4px',
-                          background: isLiquidatable
-                            ? 'rgba(244, 63, 94, 0.2)'
+                        className={`inline-block mt-0.5 text-[10px] font-black px-1.5 py-0.5 border border-black uppercase ${
+                          isLiquidatable
+                            ? 'bg-[#FF3366] text-white animate-pulse'
                             : isWarning
-                            ? 'rgba(245, 158, 11, 0.2)'
-                            : 'rgba(16, 185, 129, 0.15)',
-                          color: isLiquidatable ? '#f43f5e' : isWarning ? '#f59e0b' : '#10b981',
-                        }}
+                            ? 'bg-[#FFE600] text-black'
+                            : 'bg-[#00F076] text-black'
+                        }`}
                       >
-                        {isLiquidatable ? 'LIQUIDATABLE' : `${marginRatio.toFixed(1)}% Ratio`}
+                        {isLiquidatable ? 'LIQUIDATABLE' : `${marginRatio.toFixed(1)}% RATIO`}
                       </span>
                     </td>
 
                     {/* 7. Liquidation Price */}
-                    <td style={{ padding: '14px 8px', fontFamily: 'monospace', color: '#f43f5e', fontWeight: 600 }}>
+                    <td className="py-3 px-3 border-r border-black font-bold text-[#d9044b]">
                       {formatUsd(liqPrice)}
                     </td>
 
                     {/* 8. Counterparty LP */}
-                    <td style={{ padding: '14px 8px' }}>
-                      <div style={{ fontSize: '0.8rem', color: '#cbd5e1', fontFamily: 'monospace' }}>
+                    <td className="py-3 px-3 border-r border-black">
+                      <div className="font-bold text-black">
                         {shortenAddress(pos.lp)}
                       </div>
-                      <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                      <span className="text-[10px] text-gray-500 uppercase">
                         Aqua JIT Collateral
                       </span>
                     </td>
 
                     {/* 9. Action: Close */}
-                    <td style={{ padding: '14px 8px', textAlign: 'right' }}>
+                    <td className="py-3 px-3 text-right">
                       <button
+                        type="button"
                         onClick={() => handleClosePosition(pos)}
                         disabled={closingId === pos.id}
                         id={`btn-close-position-${pos.id}`}
-                        style={{
-                          background: 'rgba(244, 63, 94, 0.12)',
-                          border: '1px solid rgba(244, 63, 94, 0.3)',
-                          borderRadius: '8px',
-                          padding: '6px 14px',
-                          color: '#f43f5e',
-                          fontWeight: 700,
-                          fontSize: '0.8rem',
-                          cursor: closingId === pos.id ? 'not-allowed' : 'pointer',
-                          transition: 'all 0.2s ease',
-                        }}
+                        className="bg-[#FF3366] hover:bg-[#e62957] text-white font-headline font-black text-xs uppercase px-3 py-1.5 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {closingId === pos.id ? 'Closing...' : 'Close'}
+                        {closingId === pos.id ? 'CLOSING...' : 'CLOSE'}
                       </button>
                     </td>
                   </tr>
