@@ -1,14 +1,24 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": [
+      "ES2022"
+    ],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist"
   },
-  "include": ["main.ts", "**/*.ts"]
+  "include": [
+    "main.ts",
+    "attention-oracle.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "test.ts",
+    "**/*.test.ts"
+  ]
 }
