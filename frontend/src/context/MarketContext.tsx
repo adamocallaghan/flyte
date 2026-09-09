@@ -5,7 +5,60 @@ import { ethers } from 'ethers';
 import { useWeb3 } from './Web3Context';
 import { A_USDC_ADDRESS, LOCAL_RPC_URL } from '../config/contracts';
 
+export interface MarketInfo {
+  id: string;
+  name: string;
+  symbol: string;
+  icon: string;
+  maxLeverage: string;
+  status: 'LIVE' | 'DEMO';
+  basePrice: number;
+}
+
+export const AVAILABLE_MARKETS: MarketInfo[] = [
+  {
+    id: 'BTC/USD',
+    name: 'BTC / USD',
+    symbol: 'BTC',
+    icon: '₿',
+    maxLeverage: '10x',
+    status: 'LIVE',
+    basePrice: 60000,
+  },
+  {
+    id: 'ETH/USD',
+    name: 'ETH / USD',
+    symbol: 'ETH',
+    icon: 'Ξ',
+    maxLeverage: '25x',
+    status: 'DEMO',
+    basePrice: 3280,
+  },
+  {
+    id: 'SOL/USD',
+    name: 'SOL / USD',
+    symbol: 'SOL',
+    icon: '◎',
+    maxLeverage: '20x',
+    status: 'DEMO',
+    basePrice: 185.5,
+  },
+  {
+    id: 'ARB/USD',
+    name: 'ARB / USD',
+    symbol: 'ARB',
+    icon: '🔷',
+    maxLeverage: '15x',
+    status: 'DEMO',
+    basePrice: 1.15,
+  },
+];
+
 export interface MarketStats {
+  selectedMarket: string;
+  setSelectedMarket: (m: string) => void;
+  availableMarkets: MarketInfo[];
+  currentMarket: MarketInfo;
   btcPrice: number;
   rawBtcPrice: bigint;
   priceDirection: 'up' | 'down' | 'neutral';
@@ -27,6 +80,10 @@ export interface MarketStats {
 }
 
 const DEFAULT_STATS: MarketStats = {
+  selectedMarket: 'BTC/USD',
+  setSelectedMarket: () => {},
+  availableMarkets: AVAILABLE_MARKETS,
+  currentMarket: AVAILABLE_MARKETS[0],
   btcPrice: 60000,
   rawBtcPrice: ethers.parseUnits('60000', 18),
   priceDirection: 'neutral',
@@ -51,6 +108,12 @@ const MarketContext = createContext<MarketStats>(DEFAULT_STATS);
 
 export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { oracleContract, appContract, provider, isFork } = useWeb3();
+
+  const [selectedMarket, setSelectedMarket] = useState<string>('BTC/USD');
+  const currentMarket = useMemo(
+    () => AVAILABLE_MARKETS.find((m) => m.id === selectedMarket) || AVAILABLE_MARKETS[0],
+    [selectedMarket]
+  );
 
   const [btcPrice, setBtcPrice] = useState<number>(60000);
   const [rawBtcPrice, setRawBtcPrice] = useState<bigint>(ethers.parseUnits('60000', 18));
@@ -184,6 +247,10 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const value = useMemo<MarketStats>(
     () => ({
+      selectedMarket,
+      setSelectedMarket,
+      availableMarkets: AVAILABLE_MARKETS,
+      currentMarket,
       btcPrice,
       rawBtcPrice,
       priceDirection,
@@ -204,6 +271,8 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       refreshMarketStats,
     }),
     [
+      selectedMarket,
+      currentMarket,
       btcPrice,
       rawBtcPrice,
       priceDirection,

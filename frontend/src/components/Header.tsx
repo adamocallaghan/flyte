@@ -151,9 +151,6 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                 className="font-headline text-[26px] tracking-tight text-black font-extrabold select-none hover:opacity-80 cursor-pointer flex items-center gap-2"
               >
                 <span>FLYTE</span>
-                <span className="bg-black text-[#00E5FF] px-1.5 py-0.5 text-[10px] font-mono font-bold tracking-widest uppercase">
-                  AQUA
-                </span>
               </div>
 
               {/* Streamlined BTC/USD Ticker Pill */}
@@ -253,7 +250,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                     : 'text-black hover:bg-neutral-200'
                 }`}
               >
-                📈 Trade BTC Perp
+                📈 TRADE
               </button>
               <button
                 type="button"
@@ -265,7 +262,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                     : 'text-black hover:bg-neutral-200'
                 }`}
               >
-                💧 1inch Aqua LP Vault
+                💧 LIQUIDITY
               </button>
               <button
                 type="button"
@@ -277,7 +274,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                     : 'text-black hover:bg-neutral-200'
                 }`}
               >
-                🤖 Keeper Console
+                🤖 KEEPER
               </button>
               <button
                 type="button"
@@ -289,7 +286,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                     : 'text-black hover:bg-neutral-200'
                 }`}
               >
-                🛡️ Shared Coverage
+                🛡️ COVERAGE
               </button>
             </nav>
 
@@ -299,7 +296,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                 SPREAD: <strong className="text-black">10 BPS</strong>
               </span>
               <span className="text-gray-600 uppercase">
-                SWAPVM: <strong className="text-[#006d32] font-bold">OPCODES 0x74/0x75</strong>
+                EXECUTION: <strong className="text-[#006d32] font-bold">ATOMIC JIT</strong>
               </span>
               <span className="text-gray-600 uppercase">
                 NETWORK: <strong className="text-black">{isFork ? `ANVIL FORK (${chainId || 31337})` : 'ARBITRUM ONE'}</strong>

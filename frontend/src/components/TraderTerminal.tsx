@@ -1,5 +1,7 @@
 'use client';
 
+import { TradingChart } from './TradingChart';
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ethers } from 'ethers';
 import { useWeb3 } from '../context/Web3Context';
@@ -512,7 +514,7 @@ export const TraderTerminal: React.FC = () => {
         {/* Unmatched liquidity warning */}
         {unmatchedReason && (
           <div className="mb-4 p-3 bg-[#FFF0F2] border-2 border-[#FF3366] text-black font-mono text-xs shadow-[2px_2px_0px_0px_#000000]">
-            <strong className="text-[#FF3366] uppercase block mb-0.5">⚠️ No Matching Aqua Liquidity:</strong>
+            <strong className="text-[#FF3366] uppercase block mb-0.5">⚠️ Insufficient Liquidity:</strong>
             {unmatchedReason}
           </div>
         )}
@@ -541,7 +543,7 @@ export const TraderTerminal: React.FC = () => {
             } ${isSubmitting || margin <= 0 || !matchedQuote ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {isSubmitting
-              ? 'Opening Position via Aqua...'
+              ? 'Opening Position...'
               : `${isLong ? 'Open Long' : 'Open Short'} (${formatUsd(notional)})`}
           </button>
         )}
@@ -562,105 +564,9 @@ export const TraderTerminal: React.FC = () => {
         )}
       </div>
 
-      {/* RIGHT: Architecture Highlights & JIT RFQ Quote Inspector (7 cols on lg) */}
-      <div className="lg:col-span-7 flex flex-col gap-6">
-        {/* JIT RFQ Counterparty Quote Card */}
-        <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6">
-          <div className="flex justify-between items-start pb-4 border-b-2 border-black mb-5 gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#00E5FF] border-2 border-black flex items-center justify-center text-xl shadow-[2px_2px_0px_0px_#000000] shrink-0">
-                💧
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-black uppercase tracking-tight">
-                  Active JIT Liquidity Quote
-                </h3>
-                <span className="font-mono text-[11px] text-gray-500 uppercase">
-                  Sourced Just-In-Time from LP Maker via 1inch Aqua Registry
-                </span>
-              </div>
-            </div>
-            <span className={`border-2 border-black font-mono text-[10px] font-bold px-2 py-0.5 uppercase shadow-[2px_2px_0px_0px_#000000] shrink-0 ${
-              matchedQuote ? 'bg-[#00F076] text-black' : 'bg-[#FF3366] text-white'
-            }`}>
-              {matchedQuote ? '🟢 MATCHED' : '🔴 NO MATCH'}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-            <div className="bg-[#FAFAFA] border-2 border-black p-3 shadow-[2px_2px_0px_0px_#000000]">
-              <span className="block font-mono text-[10px] text-gray-500 uppercase">Matched LP Maker</span>
-              <div className="font-mono text-xs md:text-sm font-bold text-black mt-0.5 truncate">
-                {matchedQuote
-                  ? (matchedQuote.maker.toLowerCase() === account?.toLowerCase()
-                      ? `${shortenAddress(matchedQuote.maker)} (You)`
-                      : matchedQuote.maker.toLowerCase() === DEMO_ROLES.lp.address.toLowerCase()
-                      ? `Grimace (${shortenAddress(matchedQuote.maker)})`
-                      : shortenAddress(matchedQuote.maker))
-                  : 'None Available'}
-              </div>
-            </div>
-
-            <div className="bg-[#FAFAFA] border-2 border-black p-3 shadow-[2px_2px_0px_0px_#000000]">
-              <span className="block font-mono text-[10px] text-gray-500 uppercase">Available JIT Depth</span>
-              <div className="font-mono text-xs md:text-sm font-black text-[#006d32] mt-0.5">
-                {matchedQuote ? `${formatUsd(matchedQuote.currentBalance)} aUSDC` : '$0.00 aUSDC'}
-              </div>
-            </div>
-
-            <div className="bg-[#FAFAFA] border-2 border-black p-3 shadow-[2px_2px_0px_0px_#000000]">
-              <span className="block font-mono text-[10px] text-gray-500 uppercase">LP Counter-Margin JIT Pulled</span>
-              <div className="font-mono text-xs md:text-sm font-bold text-black mt-0.5">
-                {formatUsd(margin)} aUSDC
-              </div>
-            </div>
-
-            <div className="bg-[#FAFAFA] border-2 border-black p-3 shadow-[2px_2px_0px_0px_#000000]">
-              <span className="block font-mono text-[10px] text-gray-500 uppercase">LP Spread Fee</span>
-              <div className="font-mono text-xs md:text-sm font-black text-black mt-0.5 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#00F076]"></span>
-                {activeSpreadBps} bps ({(activeSpreadBps / 100).toFixed(2)}%)
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-[#FFE600] border-2 border-black p-4 shadow-[3px_3px_0px_0px_#000000] text-black font-mono text-xs leading-relaxed">
-            <strong className="uppercase font-black block mb-1">⚡ The Flyte Innovation:</strong>
-            The LP’s capital is <span className="underline font-bold">NOT</span> locked idle in the perp contract. It remains in the Maker’s wallet earning Aave v3 supply yield until the moment you click &quot;Open Position&quot;, when 1inch Aqua executes a single atomic <code className="bg-black text-[#FFE600] px-1 py-0.5 font-bold">AQUA.pull()</code> for exactly {formatUsd(margin)} counter-margin!
-          </div>
-        </div>
-
-        {/* SwapVM Instruction Breakdown */}
-        <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6">
-          <div className="flex items-center gap-3 pb-3 border-b-2 border-black mb-4">
-            <div className="w-8 h-8 bg-black text-[#FFE600] border-2 border-black flex items-center justify-center text-base shadow-[2px_2px_0px_0px_#000000]">
-              ⚙️
-            </div>
-            <h4 className="text-base font-black text-black uppercase tracking-tight">
-              SwapVM Custom Opcode Execution
-            </h4>
-          </div>
-
-          <div className="flex flex-col gap-3 font-mono text-xs">
-            <div className="p-3 bg-[#FAFAFA] border-2 border-black flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-[2px_2px_0px_0px_#000000]">
-              <span className="bg-black text-[#00E5FF] font-mono text-[11px] font-black px-2 py-1 border border-black shrink-0">
-                OP_MARGIN_CALC (0x74)
-              </span>
-              <span className="text-gray-700 text-[11px] sm:text-right">
-                Validates notional {formatUsd(notional)}, computes trader margin {formatUsd(margin)} &amp; LP counter-margin
-              </span>
-            </div>
-
-            <div className="p-3 bg-[#FAFAFA] border-2 border-black flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-[2px_2px_0px_0px_#000000]">
-              <span className="bg-black text-[#FFE600] font-mono text-[11px] font-black px-2 py-1 border border-black shrink-0">
-                OP_FUNDING_CALC (0x75)
-              </span>
-              <span className="text-gray-700 text-[11px] sm:text-right">
-                Computes OI skew-based rate adjustment against 8h funding interval
-              </span>
-            </div>
-          </div>
-        </div>
+      {/* RIGHT: Professional Trading Chart Component (7 cols on lg) */}
+      <div className="lg:col-span-7">
+        <TradingChart />
       </div>
     </div>
   );
