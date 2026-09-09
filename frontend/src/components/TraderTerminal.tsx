@@ -1,6 +1,10 @@
 'use client';
 
-import { TradingChart } from './TradingChart';
+import dynamic from 'next/dynamic';
+
+const TradingChart = dynamic(() => import('./TradingChart').then((m) => m.TradingChart), {
+  ssr: false,
+});
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ethers } from 'ethers';

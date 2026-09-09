@@ -20,33 +20,34 @@ type ChartType = 'candles' | 'line';
 // Generate consistent synthetic historical candles leading up to current price
 function generateHistoricalData(currentPrice: number, timeframe: Timeframe, count = 42): CandleData[] {
   const candles: CandleData[] = [];
-  const now = Date.now();
-  
   const stepMinutes = 
     timeframe === '15m' ? 15 :
     timeframe === '1H' ? 60 :
     timeframe === '4H' ? 240 :
     timeframe === '1D' ? 1440 : 10080;
 
+  // Anchor to fixed minute block to avoid sub-second hydration drift
+  const now = Math.floor(Date.now() / (60 * 1000)) * (60 * 1000);
   const volatility = currentPrice * (timeframe === '15m' ? 0.003 : timeframe === '1H' ? 0.007 : 0.015);
-  
   let simulatedPrice = currentPrice * 0.965;
   
   for (let i = count - 1; i >= 0; i--) {
     const timestamp = now - i * stepMinutes * 60 * 1000;
     const date = new Date(timestamp);
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const mins = String(date.getUTCMinutes()).padStart(2, '0');
     const timeStr = timeframe === '1D' || timeframe === '1W'
-      ? date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-      : date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+      ? `${date.getUTCMonth() + 1}/${date.getUTCDate()}`
+      : `${hours}:${mins}`;
 
     const seed = Math.sin(i * 1.7) * 1.5 + Math.cos(i * 0.8) * 0.8;
     const delta = seed * volatility;
     
-    const open = i === count - 1 ? simulatedPrice : candles[candles.length - 1].close;
-    const close = i === 0 ? currentPrice : Math.max(open * 0.85, open + delta);
-    const high = Math.max(open, close) + Math.abs(Math.sin(i * 3.1) * volatility * 0.7);
-    const low = Math.min(open, close) - Math.abs(Math.cos(i * 2.3) * volatility * 0.7);
-    const volume = 800000 + Math.abs(Math.sin(i * 4.5)) * 2400000;
+    const open = Math.round((i === count - 1 ? simulatedPrice : candles[candles.length - 1].close) * 100) / 100;
+    const close = Math.round((i === 0 ? currentPrice : Math.max(open * 0.85, open + delta)) * 100) / 100;
+    const high = Math.round((Math.max(open, close) + Math.abs(Math.sin(i * 3.1) * volatility * 0.7)) * 100) / 100;
+    const low = Math.round((Math.min(open, close) - Math.abs(Math.cos(i * 2.3) * volatility * 0.7)) * 100) / 100;
+    const volume = Math.round(800000 + Math.abs(Math.sin(i * 4.5)) * 2400000);
 
     candles.push({
       time: timeStr,
@@ -62,9 +63,9 @@ function generateHistoricalData(currentPrice: number, timeframe: Timeframe, coun
 
   if (candles.length > 0) {
     const last = candles[candles.length - 1];
-    last.close = currentPrice;
-    last.high = Math.max(last.high, currentPrice);
-    last.low = Math.min(last.low, currentPrice);
+    last.close = Math.round(currentPrice * 100) / 100;
+    last.high = Math.max(last.high, last.close);
+    last.low = Math.min(last.low, last.close);
   }
 
   return candles;
@@ -76,11 +77,13 @@ export const TradingChart: React.FC = () => {
   const [chartType, setChartType] = useState<ChartType>('candles');
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const [isMounted, setIsMounted] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState<number>(760);
 
   useEffect(() => {
+    setIsMounted(true);
     const handleResize = () => {
       if (containerRef.current) {
         setContainerWidth(containerRef.current.clientWidth);
@@ -118,11 +121,11 @@ export const TradingChart: React.FC = () => {
   const maxVolume = Math.max(...candles.map((c) => c.volume)) || 1;
 
   const getX = (index: number) => {
-    return padding.left + (index / (candles.length - 1)) * plotWidth;
+    return Math.round((padding.left + (index / (candles.length - 1)) * plotWidth) * 100) / 100;
   };
 
   const getY = (price: number) => {
-    return padding.top + candlePlotHeight - ((price - minPrice) / priceRange) * candlePlotHeight;
+    return Math.round((padding.top + candlePlotHeight - ((price - minPrice) / priceRange) * candlePlotHeight) * 100) / 100;
   };
 
   const candleWidth = Math.max(4, Math.min(14, (plotWidth / candles.length) * 0.7));
@@ -178,6 +181,23 @@ export const TradingChart: React.FC = () => {
     const bottomY = padding.top + candlePlotHeight;
     return `M ${getX(0)},${bottomY} L ${points.join(' L ')} L ${getX(candles.length - 1)},${bottomY} Z`;
   }, [candles, plotWidth, minPrice, maxPrice]);
+
+  if (!isMounted) {
+    return (
+      <div
+        ref={containerRef}
+        className="w-full bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-4 md:p-5 flex flex-col font-headline select-none h-[490px]"
+      >
+        <div className="flex justify-between pb-3 border-b-2 border-black">
+          <div className="h-6 w-48 bg-neutral-100 border border-black animate-pulse" />
+          <div className="h-6 w-32 bg-neutral-100 border border-black animate-pulse" />
+        </div>
+        <div className="flex-1 flex items-center justify-center font-mono text-xs text-gray-400">
+          Loading Market Chart...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
