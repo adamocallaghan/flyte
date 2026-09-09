@@ -1,0 +1,23 @@
+{
+  "schedule": "*/5 * * * *",
+  "markets": [
+    {
+      "id": "ROBOTS",
+      "name": "Humanoid Robots",
+      "keywords": ["humanoid robot", "optimus", "figure 02", "boston dynamics", "unitree"],
+      "baseIndex": 75.50
+    },
+    {
+      "id": "GTA6",
+      "name": "Grand Theft Auto VI",
+      "keywords": ["gta 6", "gta vi", "grand theft auto vi", "rockstar games", "trailer 2"],
+      "baseIndex": 42.10
+    },
+    {
+      "id": "DEEPSEEK",
+      "name": "DeepSeek AI",
+      "keywords": ["deepseek", "deepseek r1", "v3", "open-source reasoning"],
+      "baseIndex": 88.40
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+staging-settings:
+  user-workflow:
+    workflow-name: "flyte-attention-oracle-staging"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.json"
+    secrets-path: "../secrets.yaml"
+
+production-settings:
+  user-workflow:
+    workflow-name: "flyte-attention-oracle-production"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.json"
+    secrets-path: "../secrets.yaml"

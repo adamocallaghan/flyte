@@ -1,0 +1,18 @@
+{
+  "name": "flyte-attention-oracle",
+  "version": "1.0.0",
+  "description": "Flyte Ground Truth Attention Oracle running in Chainlink CRE TEE Confidential Workflow",
+  "type": "module",
+  "scripts": {
+    "simulate": "cre workflow simulate ."
+  },
+  "dependencies": {
+    "@chainlink/cre-sdk": "^1.20.0",
+    "viem": "^2.21.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.4.0"
+  }
+}
