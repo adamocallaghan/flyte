@@ -80,24 +80,36 @@ export const SharedCoverage: React.FC = () => {
 
           const quoteMap = new Map<string, any>();
 
-          for (const log of (shippedLogs as any[])) {
+          const appShipped = (shippedLogs as any[]).filter(
+            (log: any) => (log as any).args?.[1]?.toLowerCase() === appAddress.toLowerCase()
+          );
+
+          const strategyAbi = [
+            'tuple(address lp, address collateralToken, uint256 maxNotional, uint256 maxLeverage, uint256 spreadBps, uint8 sideMask, uint256 quoteExpiry)',
+          ];
+
+          for (const log of appShipped) {
+            const makerAddr = (log as any).args?.[0]?.toLowerCase();
+            const strategyHash = (log as any).args?.[2]?.toLowerCase();
+            const strategyBytes = (log as any).args?.[3];
+            if (!makerAddr || !strategyHash || !strategyBytes) continue;
+            if (dockedHashes.has(strategyHash)) continue;
+
             try {
-              const strategyHash = (log as any).args?.[2]?.toLowerCase();
-              if (!strategyHash || dockedHashes.has(strategyHash)) continue;
+              const decoded = ethers.AbiCoder.defaultAbiCoder().decode(strategyAbi, strategyBytes)[0];
+              const collateralToken = decoded[1];
+              const maxNotional = parseFloat(ethers.formatUnits(decoded[2], 6));
+              const maxLev = Number(decoded[3]);
+              const spread = Number(decoded[4]);
+              const side = Number(decoded[5]);
 
-              const strategyBytes = (log as any).args?.[1];
-              if (!strategyBytes || strategyBytes.length < 2) continue;
-
-              const decoded = ethers.AbiCoder.defaultAbiCoder().decode(
-                ['address', 'uint256', 'uint256', 'uint256', 'uint8'],
-                strategyBytes
-              );
-
-              const makerAddr = (decoded[0] as string).toLowerCase();
-              const maxNotional = parseFloat(ethers.formatUnits(decoded[1], 6));
-              const maxLev = Number(decoded[2]);
-              const spread = Number(decoded[3]);
-              const side = Number(decoded[4]);
+              // Check if docked via rawBalances in Aqua
+              try {
+                const [bal] = await (aquaContract as any).rawBalances(makerAddr, appAddress, strategyHash, collateralToken);
+                if (parseFloat(ethers.formatUnits(bal, 6)) === 0) {
+                  continue; // Strategy was docked/revoked
+                }
+              } catch {}
 
               // Fetch live on-chain balance and allowance for maker
               if (!makerBalanceMap.has(makerAddr)) {
