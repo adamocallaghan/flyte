@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { Header } from '../components/Header';
 import { MarketStatsBar } from '../components/MarketStatsBar';
-import { PriceController } from '../components/PriceController';
 import { TraderTerminal } from '../components/TraderTerminal';
 import { PositionsManager } from '../components/PositionsManager';
 import { LPConsole } from '../components/LPConsole';
@@ -12,7 +11,6 @@ import { SharedCoverage } from '../components/SharedCoverage';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'trade' | 'lp' | 'keeper' | 'coverage'>('trade');
-  const [isPriceControllerOpen, setIsPriceControllerOpen] = useState<boolean>(false);
 
 
 
@@ -28,7 +26,7 @@ export default function Home() {
       <main className="w-full pt-28 pb-12 bg-[#f4f4f4] flex-1">
         <div className="w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Market Stats Bar */}
-          <MarketStatsBar onOpenPriceController={() => setIsPriceControllerOpen(true)} />
+          <MarketStatsBar />
 
 
 
@@ -95,11 +93,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* Interactive Price Controller Modal */}
-      <PriceController
-        isOpen={isPriceControllerOpen}
-        onClose={() => setIsPriceControllerOpen(false)}
-      />
+
     </div>
   );
 }

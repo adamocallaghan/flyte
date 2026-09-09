@@ -272,7 +272,7 @@ export const KeeperConsole: React.FC = () => {
       if (isIntervalError) {
         setStatusMessage({
           type: 'error',
-          text: '⏳ Funding interval (8 hours) has not elapsed yet. Click "Warp Time (+8 Hours)" above on Anvil to advance the clock!',
+          text: '⏳ Funding interval (8 hours) has not elapsed yet. Fast-forward block time using the ⚙️ Dev Tools button in the top navigation on Anvil!',
         });
       } else {
         setStatusMessage({
@@ -287,38 +287,7 @@ export const KeeperConsole: React.FC = () => {
     }
   };
 
-  // 3. Fast Forward Time (+8 Hours) on Anvil Fork
-  const handleFastForwardTime = async () => {
-    setExecutingType('warp');
-    setStatusMessage({ type: 'info', text: 'Fast-forwarding block timestamp by 8 hours (28,800s)...' });
 
-    try {
-      if (isFork) {
-        const anvilProv = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
-        await anvilProv.send('evm_increaseTime', [28800]);
-        await anvilProv.send('evm_mine', []);
-
-        setStatusMessage({
-          type: 'success',
-          text: '⏩ Time fast-forwarded by +8 hours! Funding intervals are now eligible for settlement.',
-        });
-
-        await scanPositions();
-        await refreshMarketStats();
-      } else {
-        setStatusMessage({
-          type: 'info',
-          text: 'Time warp is only available on local Anvil fork.',
-        });
-      }
-    } catch (err: any) {
-      console.error('Time warp failed:', err);
-      setStatusMessage({ type: 'error', text: err.message || 'Could not fast forward time' });
-    } finally {
-      setExecutingType(null);
-      setTimeout(() => setStatusMessage(null), 4000);
-    }
-  };
 
   const liquidatableCount = monitoredPositions.filter((p) => p.isLiquidatable).length;
 
@@ -349,8 +318,8 @@ export const KeeperConsole: React.FC = () => {
         </div>
       </div>
 
-      {/* TOP: Keeper Metrics & Fast-Forward Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* TOP: Keeper Metrics Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Metric 1: Keeper Bounty Rate */}
         <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 flex flex-col justify-between">
           <div>
@@ -396,34 +365,6 @@ export const KeeperConsole: React.FC = () => {
           <span className="font-mono text-[11px] text-gray-600 mt-2">
             Collateral bounty paid in aUSDC
           </span>
-        </div>
-
-        {/* Metric 4: Anvil Time Warp Machine */}
-        <div className="bg-[#FFE600] border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 flex flex-col justify-between text-black">
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <span className="font-mono text-xs font-black uppercase tracking-wider">
-                Anvil Time Warp
-              </span>
-              <span className="bg-black text-[#FFE600] font-mono text-[9px] font-bold px-1.5 py-0.5 border border-black">
-                DEBUG
-              </span>
-            </div>
-            <p className="font-mono text-[11px] leading-tight text-gray-800 mb-3">
-              Fast-forward block timestamp by +8h to trigger SwapVM 0x75 funding epochs.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleFastForwardTime}
-            disabled={executingType === 'warp'}
-            id="btn-fast-forward-time"
-            className="w-full h-12 px-6 bg-black text-[#FFE600] hover:bg-gray-900 border-2 border-black font-headline font-black text-xs uppercase shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer flex items-center justify-center gap-2 transition-transform disabled:opacity-50 tracking-wider"
-          >
-            <span>⏩</span>
-            <span>{executingType === 'warp' ? 'Warping Time...' : 'Warp Time (+8 Hours)'}</span>
-          </button>
         </div>
       </div>
 

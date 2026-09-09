@@ -4,11 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useMarket } from '../context/MarketContext';
 import { formatUsd } from '../config/contracts';
 
-interface MarketStatsBarProps {
-  onOpenPriceController: () => void;
-}
+interface MarketStatsBarProps {}
 
-export const MarketStatsBar: React.FC<MarketStatsBarProps> = ({ onOpenPriceController }) => {
+export const MarketStatsBar: React.FC<MarketStatsBarProps> = () => {
   const {
     btcPrice,
     priceChange24h,
@@ -198,18 +196,7 @@ export const MarketStatsBar: React.FC<MarketStatsBarProps> = ({ onOpenPriceContr
           </div>
         </div>
 
-        {/* Right: Simulate Price Trigger */}
-        <div className="shrink-0 flex items-center">
-          <button
-            type="button"
-            onClick={onOpenPriceController}
-            id="btn-open-price-controller"
-            className="h-11 bg-[#FFE600] hover:bg-[#ffe100] text-black font-headline font-bold text-xs uppercase px-4 border-2 border-black shadow-[3px_3px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2 cursor-pointer select-none tracking-wider"
-          >
-            <span>⚡</span>
-            <span>SIMULATE PRICE</span>
-          </button>
-        </div>
+
       </div>
     </div>
   );
