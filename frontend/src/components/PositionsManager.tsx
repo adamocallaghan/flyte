@@ -37,7 +37,7 @@ export const PositionsManager: React.FC = () => {
   const { btcPrice } = useMarket();
 
   const [positions, setPositions] = useState<DisplayPosition[]>([]);
-  const [filterMine, setFilterMine] = useState<boolean>(false);
+  const [filterMine, setFilterMine] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [closingId, setClosingId] = useState<number | null>(null);
   const [actionStatus, setActionStatus] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
@@ -157,9 +157,6 @@ export const PositionsManager: React.FC = () => {
       {/* Header & Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b-2 border-black mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-black text-[#00F076] border-2 border-black flex items-center justify-center font-bold text-base shadow-[2px_2px_0px_0px_#000000]">
-            ⚡
-          </div>
           <h3 className="text-xl font-black text-black uppercase tracking-tight">
             Active Positions
           </h3>
@@ -178,17 +175,6 @@ export const PositionsManager: React.FC = () => {
           <div className="flex bg-white border-2 border-black p-0.5 shadow-[2px_2px_0px_0px_#000000]">
             <button
               type="button"
-              onClick={() => setFilterMine(false)}
-              className={`font-mono text-xs font-bold px-5 py-2 uppercase cursor-pointer transition-colors tracking-wider ${
-                !filterMine
-                  ? 'bg-black text-[#00E5FF]'
-                  : 'bg-transparent text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              All Positions
-            </button>
-            <button
-              type="button"
               onClick={() => setFilterMine(true)}
               className={`font-mono text-xs font-bold px-5 py-2 uppercase cursor-pointer transition-colors tracking-wider ${
                 filterMine
@@ -197,6 +183,17 @@ export const PositionsManager: React.FC = () => {
               }`}
             >
               My Account
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterMine(false)}
+              className={`font-mono text-xs font-bold px-5 py-2 uppercase cursor-pointer transition-colors tracking-wider ${
+                !filterMine
+                  ? 'bg-black text-[#00E5FF]'
+                  : 'bg-transparent text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              All Positions
             </button>
           </div>
 

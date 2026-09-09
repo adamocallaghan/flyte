@@ -388,126 +388,13 @@ export const LPConsole: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-6 font-headline">
-      {/* Role Notice Banner (if not in LP role) */}
-      {role !== 'lp' && (
-        <div className="bg-[#FFE600] border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-4 flex flex-wrap items-center justify-between gap-4 text-black">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">💡</span>
-            <span className="text-sm font-bold">
-              You are currently viewing as <span className="bg-black text-[#FFE600] px-1.5 py-0.5 font-mono text-xs">{role.toUpperCase()}</span>. Switch to <strong>LP Maker (Grimace)</strong> for 1-click LP quote operations.
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setRole('lp')}
-            className="bg-black text-[#FFE600] hover:bg-gray-900 border-2 border-black font-headline font-black text-xs uppercase px-6 py-3 tracking-wider shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-transform"
-          >
-            Switch to Grimace
-          </button>
-        </div>
-      )}
 
-      {/* TOP SECTION: Aave v3 Yield & Capital Efficiency Monitor */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Card 1: Aave v3 Yield Accrual */}
-        <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-center pb-3 border-b-2 border-black mb-4">
-              <span className="font-mono text-xs font-black text-black uppercase tracking-wider">
-                Aave v3 Yield Accrual
-              </span>
-              <span className="bg-[#00F076] border-2 border-black font-mono text-[10px] font-bold px-2 py-0.5 text-black uppercase shadow-[1px_1px_0px_0px_#000000]">
-                {apy}% Supply APY
-              </span>
-            </div>
 
-            <div className="font-mono text-3xl md:text-4xl font-black text-[#006d32] mb-1">
-              +${accruedYield.toFixed(4)}
-            </div>
-            <p className="text-gray-600 font-mono text-xs mb-4 leading-relaxed">
-              Live interest accrued in Grimace&apos;s wallet while JIT quotes remain active on 1inch Aqua.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2.5 pt-3 border-t-2 border-black">
-            <div className="bg-[#FAFAFA] border-2 border-black p-2.5 shadow-[2px_2px_0px_0px_#000000]">
-              <span className="block font-mono text-[10px] text-gray-500 uppercase">Daily</span>
-              <div className="font-mono font-black text-xs md:text-sm text-black mt-0.5">
-                +${dailyInterest.toFixed(2)}
-              </div>
-            </div>
-            <div className="bg-[#FAFAFA] border-2 border-black p-2.5 shadow-[2px_2px_0px_0px_#000000]">
-              <span className="block font-mono text-[10px] text-gray-500 uppercase">Monthly</span>
-              <div className="font-mono font-black text-xs md:text-sm text-black mt-0.5">
-                +${monthlyInterest.toFixed(2)}
-              </div>
-            </div>
-            <div className="bg-[#FAFAFA] border-2 border-black p-2.5 shadow-[2px_2px_0px_0px_#000000]">
-              <span className="block font-mono text-[10px] text-gray-500 uppercase">Annual</span>
-              <div className="font-mono font-black text-xs md:text-sm text-black mt-0.5">
-                +${annualInterest.toFixed(2)}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Capital Efficiency Comparison */}
-        <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-center pb-3 border-b-2 border-black mb-4">
-              <span className="font-mono text-xs font-black text-black uppercase tracking-wider">
-                Capital Efficiency Multiplier
-              </span>
-              <span className="bg-[#00E5FF] border-2 border-black font-mono text-[10px] font-bold px-2 py-0.5 text-black uppercase shadow-[1px_1px_0px_0px_#000000]">
-                2.8x Efficiency
-              </span>
-            </div>
-
-            <div className="flex items-baseline gap-3 mb-3">
-              <span className="font-mono text-3xl md:text-4xl font-black text-black">
-                280%
-              </span>
-              <span className="font-mono text-xs text-gray-600 uppercase font-bold">
-                vs Traditional Vaults
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2 font-mono text-xs pt-3 border-t-2 border-black">
-            <div className="flex justify-between items-center p-2 bg-[#FAFAFA] border border-black">
-              <span className="text-gray-700">Standard Isolated Vaults</span>
-              <span className="font-black text-[#d9044b]">0% Money Market Yield</span>
-            </div>
-            <div className="flex justify-between items-center p-2 bg-[#FAFAFA] border border-black">
-              <span className="text-gray-700">Flyte JIT Aqua Sourcing</span>
-              <span className="font-black text-[#006d32]">4.25% Aave + Spread Fees</span>
-            </div>
-            <div className="flex justify-between items-center p-2 bg-[#FAFAFA] border border-black">
-              <span className="text-gray-700">Liquidity Mobility</span>
-              <span className="font-black text-black">Zero Lockup (Instant Withdrawal)</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Action Notification Toast */}
-      {statusMessage && (
-        <div
-          className={`p-3.5 border-2 border-black shadow-[3px_3px_0px_0px_#000000] font-mono text-xs font-bold leading-snug ${
-            statusMessage.type === 'success'
-              ? 'bg-[#00F076] text-black'
-              : statusMessage.type === 'error'
-              ? 'bg-[#FF3366] text-white'
-              : 'bg-[#00E5FF] text-black'
-          }`}
-        >
-          {statusMessage.text}
-        </div>
-      )}
-
-      {/* MIDDLE SECTION: Interactive Quote Shipper Form */}
-      <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6">
-        <div className="flex flex-wrap items-center justify-between pb-4 border-b-2 border-black mb-5 gap-3">
+      {/* TOP ROW: Interactive Quote Shipper Form (75%) & Aave v3 Yield Accrual (25%) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        {/* 1. Quote Shipper Form (75% width on lg) */}
+        <div className="lg:col-span-9 bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 md:p-6 flex flex-col justify-between">
+          <div className="flex flex-wrap items-center justify-between pb-4 border-b-2 border-black mb-5 gap-3">
           <div>
             <h3 className="text-xl font-black text-black uppercase tracking-tight">
               Ship JIT Liquidity Strategy to 1inch Aqua
@@ -635,6 +522,49 @@ export const LPConsole: React.FC = () => {
               {isShipping ? 'Shipping to Aqua...' : 'Ship Strategy to 1inch Aqua'}
             </button>
           )}
+        </div>
+        </div>
+
+        {/* 2. Compact Aave v3 Yield Accrual Widget (25% width on lg) */}
+        <div className="lg:col-span-3 bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-center pb-3 border-b-2 border-black mb-4">
+              <span className="font-mono text-xs font-black text-black uppercase tracking-wider">
+                Aave v3 Yield
+              </span>
+              <span className="bg-[#00F076] border-2 border-black font-mono text-[10px] font-bold px-2 py-0.5 text-black uppercase shadow-[1px_1px_0px_0px_#000000]">
+                {apy}% APY
+              </span>
+            </div>
+
+            <div className="font-mono text-2xl md:text-3xl font-black text-[#006d32] mb-1">
+              +${accruedYield.toFixed(4)}
+            </div>
+            <p className="text-gray-600 font-mono text-xs mb-4 leading-relaxed">
+              Live interest accrued in your wallet while JIT quotes remain active on 1inch Aqua.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2 pt-3 border-t-2 border-black">
+            <div className="bg-[#FAFAFA] border-2 border-black p-2.5 flex justify-between items-center shadow-[1px_1px_0px_0px_#000000]">
+              <span className="font-mono text-[10px] text-gray-500 uppercase font-bold">Daily</span>
+              <span className="font-mono font-black text-xs text-black">
+                +${dailyInterest.toFixed(2)}
+              </span>
+            </div>
+            <div className="bg-[#FAFAFA] border-2 border-black p-2.5 flex justify-between items-center shadow-[1px_1px_0px_0px_#000000]">
+              <span className="font-mono text-[10px] text-gray-500 uppercase font-bold">Monthly</span>
+              <span className="font-mono font-black text-xs text-black">
+                +${monthlyInterest.toFixed(2)}
+              </span>
+            </div>
+            <div className="bg-[#FAFAFA] border-2 border-black p-2.5 flex justify-between items-center shadow-[1px_1px_0px_0px_#000000]">
+              <span className="font-mono text-[10px] text-gray-500 uppercase font-bold">Annual</span>
+              <span className="font-mono font-black text-xs text-black">
+                +${annualInterest.toFixed(2)}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

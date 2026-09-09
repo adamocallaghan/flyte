@@ -254,10 +254,7 @@ export const TradingChart: React.FC = () => {
             <span>24H VOL: <strong className="text-black">${(volume24h / 1000000).toFixed(2)}M</strong></span>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-[#FAFAFA] border border-black px-2 py-0.5 text-[10px] font-bold uppercase">
-            <span className="w-2 h-2 rounded-full bg-[#00F076] animate-pulse"></span>
-            <span className="text-black">ORACLE: LIVE</span>
-          </div>
+
         </div>
       </div>
 

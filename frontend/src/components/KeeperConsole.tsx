@@ -324,24 +324,7 @@ export const KeeperConsole: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-6 font-headline">
-      {/* Role Alert Banner if not Ronald */}
-      {role !== 'keeper' && (
-        <div className="bg-[#FFE600] border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-4 flex flex-wrap items-center justify-between gap-4 text-black">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">🤖</span>
-            <span className="text-sm font-bold">
-              You are currently viewing as <span className="bg-black text-[#FFE600] px-1.5 py-0.5 font-mono text-xs">{role.toUpperCase()}</span>. Switch to <strong>Keeper (Ronald)</strong> to execute 1-click keeper liquidations.
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setRole('keeper')}
-            className="bg-black text-[#FFE600] hover:bg-gray-900 border-2 border-black font-headline font-black text-xs uppercase px-4 py-2 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer transition-transform"
-          >
-            Switch to Ronald
-          </button>
-        </div>
-      )}
+
 
       {/* Active Keeper Status Bar */}
       <div className="p-3.5 bg-[#FAFAFA] border-2 border-black flex flex-wrap justify-between items-center text-xs font-mono gap-3 shadow-[2px_2px_0px_0px_#000000]">
