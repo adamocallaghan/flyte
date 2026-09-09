@@ -1427,11 +1427,200 @@ export const PERP_AQUA_APP_ABI = [
   }
 ] as const;
 
-export const MOCK_PRICE_ORACLE_ABI = [
+export const ATTENTION_ORACLE_ABI = [
   {
     "type": "constructor",
     "inputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "assetToMarket",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "attentionMarkets",
+    "inputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "name",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "indexPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "sentimentScore",
+        "type": "int256",
+        "internalType": "int256"
+      },
+      {
+        "name": "socialVelocity",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "newsMentions24h",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "lastUpdatedAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "isConfigured",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "authorizedReporters",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "batchUpdateAttentionReports",
+    "inputs": [
+      {
+        "name": "marketIds",
+        "type": "string[]",
+        "internalType": "string[]"
+      },
+      {
+        "name": "newPrices",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      },
+      {
+        "name": "sentiments",
+        "type": "int256[]",
+        "internalType": "int256[]"
+      },
+      {
+        "name": "velocities",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      },
+      {
+        "name": "mentions",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getAllMarketIds",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string[]",
+        "internalType": "string[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getAttentionData",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct AttentionOracle.AttentionData",
+        "components": [
+          {
+            "name": "name",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "indexPrice",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "sentimentScore",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "socialVelocity",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "newsMentions24h",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "lastUpdatedAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "isConfigured",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -1448,6 +1637,25 @@ export const MOCK_PRICE_ORACLE_ABI = [
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "marketToAsset",
+    "inputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "view"
@@ -1486,6 +1694,53 @@ export const MOCK_PRICE_ORACLE_ABI = [
   },
   {
     "type": "function",
+    "name": "registerMarket",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "assetAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "initialPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "registeredMarketIds",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "setPrice",
     "inputs": [
       {
@@ -1504,6 +1759,24 @@ export const MOCK_PRICE_ORACLE_ABI = [
   },
   {
     "type": "function",
+    "name": "setReporter",
+    "inputs": [
+      {
+        "name": "reporter",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "isAuthorized",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "transferOwnership",
     "inputs": [
       {
@@ -1514,6 +1787,113 @@ export const MOCK_PRICE_ORACLE_ABI = [
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "updateAttentionReport",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "newPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "sentimentScore",
+        "type": "int256",
+        "internalType": "int256"
+      },
+      {
+        "name": "socialVelocity",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "newsMentions24h",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "AttentionReportUpdated",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "string",
+        "indexed": true,
+        "internalType": "string"
+      },
+      {
+        "name": "indexPrice",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "sentimentScore",
+        "type": "int256",
+        "indexed": false,
+        "internalType": "int256"
+      },
+      {
+        "name": "socialVelocity",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newsMentions24h",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MarketRegistered",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "string",
+        "indexed": true,
+        "internalType": "string"
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      },
+      {
+        "name": "assetAddress",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "initialPrice",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
   },
   {
     "type": "event",
@@ -1554,16 +1934,58 @@ export const MOCK_PRICE_ORACLE_ABI = [
     "anonymous": false
   },
   {
+    "type": "event",
+    "name": "ReporterUpdated",
+    "inputs": [
+      {
+        "name": "reporter",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "isAuthorized",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
     "type": "error",
     "name": "InvalidPrice",
     "inputs": []
   },
   {
     "type": "error",
+    "name": "MarketNotFound",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "string",
+        "internalType": "string"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "OnlyOwner",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OnlyReporterOrOwner",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ZeroAddress",
     "inputs": []
   }
 ] as const;
+
+export const MOCK_PRICE_ORACLE_ABI = ATTENTION_ORACLE_ABI;
 
 export const AQUA_ABI = [
   {

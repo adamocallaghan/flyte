@@ -203,7 +203,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
   };
 
   const roleList = Object.values(DEMO_ROLES);
-  const displayPrice = selectedMarket === 'BTC/USD' ? btcPrice : currentMarket?.basePrice || btcPrice;
+  const displayPrice = btcPrice || currentMarket?.basePrice || 75.50;
   const formattedPrice = formatUsd(displayPrice);
   const isPositive = priceChange24h >= 0;
 
@@ -637,8 +637,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-gray-500">$</span>
                       <input
                         type="number"
-                        step="100"
-                        min="1000"
+                        step="0.1"
+                        min="1"
                         max="500000"
                         value={customTargetPrice}
                         onChange={(e) => setCustomTargetPrice(e.target.value)}

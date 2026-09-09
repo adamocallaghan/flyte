@@ -51,7 +51,7 @@ export const TraderTerminal: React.FC = () => {
     refreshBalances,
   } = useWeb3();
 
-  const { btcPrice, setMarketPrice } = useMarket();
+  const { btcPrice, setMarketPrice, selectedMarket, currentMarket } = useMarket();
 
   // Order Form State
   const [isLong, setIsLong] = useState<boolean>(false);
@@ -363,7 +363,7 @@ export const TraderTerminal: React.FC = () => {
               Place Order
             </h2>
             <span className="font-mono text-[11px] text-gray-500 uppercase">
-              BTC/USD Perpetual
+              {selectedMarket || "ROBOTS/USD"} Perpetual
             </span>
           </div>
           <span className="bg-[#FFE600] border-2 border-black font-mono text-[10px] font-bold px-2 py-0.5 text-black uppercase shadow-[2px_2px_0px_0px_#000000]">
@@ -482,7 +482,7 @@ export const TraderTerminal: React.FC = () => {
           <div className="flex justify-between text-gray-700">
             <span>Position Size (Notional)</span>
             <span className="text-black font-bold">
-              {formatUsd(notional)} ({btcSize.toFixed(4)} BTC)
+              {formatUsd(notional)} ({btcSize.toFixed(4)} {currentMarket.symbol})
             </span>
           </div>
 

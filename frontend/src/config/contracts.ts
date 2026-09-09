@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { PERP_AQUA_APP_ABI, MOCK_PRICE_ORACLE_ABI, AQUA_ABI, ERC20_ABI } from './abis';
+import { PERP_AQUA_APP_ABI, MOCK_PRICE_ORACLE_ABI, ATTENTION_ORACLE_ABI, AQUA_ABI, ERC20_ABI } from './abis';
 
 // Arbitrum One Verified Addresses
 export const ARBITRUM_ONE_CHAIN_ID = 42161;
@@ -16,7 +16,7 @@ export const WETH_ADDRESS = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1';
 // Default / Configurable Contract Addresses
 // Can be overridden in UI settings or via process.env
 export const DEFAULT_PERP_APP_ADDRESS = process.env.NEXT_PUBLIC_PERP_APP_ADDRESS || '0xf8cfaedc2f104ed51a24328575a78a0d9cf47f5c';
-export const DEFAULT_ORACLE_ADDRESS = process.env.NEXT_PUBLIC_ORACLE_ADDRESS || '0x3f409644e11a2d56d3074d80148a09b7d1cabf1a';
+export const DEFAULT_ORACLE_ADDRESS = process.env.NEXT_PUBLIC_ORACLE_ADDRESS || '0x521e37c5DFF638fA088c399A93A4c6d2CC4993Fb';
 export const DEFAULT_ROUTER_ADDRESS = process.env.NEXT_PUBLIC_ROUTER_ADDRESS || '0x4eecc19a870929c6299185201bb0691e852d4048';
 
 export interface DemoRoleConfig {
@@ -85,4 +85,4 @@ export function formatToken(amount: bigint | string | number, decimals = 6, disp
   }
 }
 
-export { PERP_AQUA_APP_ABI, MOCK_PRICE_ORACLE_ABI, AQUA_ABI, ERC20_ABI };
+export { PERP_AQUA_APP_ABI, MOCK_PRICE_ORACLE_ABI, ATTENTION_ORACLE_ABI, AQUA_ABI, ERC20_ABI };

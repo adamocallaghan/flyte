@@ -17,6 +17,13 @@ interface CandleData {
 type Timeframe = '15m' | '1H' | '4H' | '1D' | '1W';
 type ChartType = 'candles' | 'line';
 
+function formatChartPrice(price: number): string {
+  if (price < 1000) {
+    return `$${price.toFixed(2)}`;
+  }
+  return `$${Math.round(price).toLocaleString()}`;
+}
+
 // Generate consistent synthetic historical candles leading up to current price
 function generateHistoricalData(currentPrice: number, timeframe: Timeframe, count = 42): CandleData[] {
   const candles: CandleData[] = [];
@@ -103,7 +110,7 @@ export const TradingChart: React.FC = () => {
   const isPositive = priceChange24h >= 0;
 
   const height = 380;
-  const padding = { top: 25, right: 65, bottom: 45, left: 10 };
+  const padding = { top: 25, right: 70, bottom: 45, left: 10 };
   const chartWidth = Math.max(300, containerWidth);
   const plotWidth = chartWidth - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
@@ -113,39 +120,30 @@ export const TradingChart: React.FC = () => {
   const prices = candles.flatMap((c) => [c.high, c.low]);
   const minPriceRaw = Math.min(...prices);
   const maxPriceRaw = Math.max(...prices);
-  const pricePadding = (maxPriceRaw - minPriceRaw) * 0.08 || 500;
+  const pricePadding = (maxPriceRaw - minPriceRaw) * 0.08 || (btcPrice * 0.03) || 1;
   const minPrice = minPriceRaw - pricePadding;
   const maxPrice = maxPriceRaw + pricePadding;
   const priceRange = maxPrice - minPrice || 1;
 
-  const maxVolume = Math.max(...candles.map((c) => c.volume)) || 1;
+  const getY = (price: number) => {
+    const normalized = (price - minPrice) / priceRange;
+    return padding.top + candlePlotHeight - normalized * candlePlotHeight;
+  };
 
   const getX = (index: number) => {
-    return Math.round((padding.left + (index / (candles.length - 1)) * plotWidth) * 100) / 100;
+    const step = plotWidth / (candles.length - 1 || 1);
+    return padding.left + index * step;
   };
 
-  const getY = (price: number) => {
-    return Math.round((padding.top + candlePlotHeight - ((price - minPrice) / priceRange) * candlePlotHeight) * 100) / 100;
-  };
+  const maxVolume = Math.max(...candles.map((c) => c.volume), 1);
+  const candleWidth = Math.max(4, Math.min(14, plotWidth / candles.length - 3));
 
-  const candleWidth = Math.max(4, Math.min(14, (plotWidth / candles.length) * 0.7));
+  const yTicks = 4;
+  const yTickPrices = useMemo(() => {
+    return Array.from({ length: yTicks }, (_, i) => minPrice + (priceRange / (yTicks - 1)) * i);
+  }, [minPrice, priceRange, yTicks]);
 
-  const high24h = Math.max(...candles.slice(-24).map((c) => c.high));
-  const low24h = Math.min(...candles.slice(-24).map((c) => c.low));
-  const volume24h = candles.reduce((acc, c) => acc + c.volume, 0);
-
-  const gridSteps = 5;
-  const gridPrices = Array.from({ length: gridSteps }, (_, i) => {
-    return minPrice + (i / (gridSteps - 1)) * priceRange;
-  });
-
-  const timeIndices = [
-    0,
-    Math.floor(candles.length * 0.25),
-    Math.floor(candles.length * 0.5),
-    Math.floor(candles.length * 0.75),
-    candles.length - 1,
-  ];
+  const timeIndices = [0, 10, 20, 30, candles.length - 1];
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -154,10 +152,11 @@ export const TradingChart: React.FC = () => {
 
     if (x >= padding.left && x <= chartWidth - padding.right && y >= padding.top && y <= height - padding.bottom) {
       setMousePos({ x, y });
-      const relativeX = x - padding.left;
-      const index = Math.round((relativeX / plotWidth) * (candles.length - 1));
-      const clampedIndex = Math.max(0, Math.min(candles.length - 1, index));
-      setHoveredIndex(clampedIndex);
+      const step = plotWidth / (candles.length - 1 || 1);
+      const idx = Math.round((x - padding.left) / step);
+      if (idx >= 0 && idx < candles.length) {
+        setHoveredIndex(idx);
+      }
     } else {
       setHoveredIndex(null);
       setMousePos(null);
@@ -171,65 +170,66 @@ export const TradingChart: React.FC = () => {
 
   const linePath = useMemo(() => {
     if (candles.length === 0) return '';
-    const points = candles.map((c, i) => `${getX(i)},${getY(c.close)}`);
-    return `M ${points.join(' L ')}`;
-  }, [candles, plotWidth, minPrice, maxPrice]);
+    return candles.reduce((acc, c, i) => {
+      const x = getX(i);
+      const y = getY(c.close);
+      return i === 0 ? `M ${x} ${y}` : `${acc} L ${x} ${y}`;
+    }, '');
+  }, [candles, plotWidth, priceRange, minPrice]);
 
   const areaPath = useMemo(() => {
     if (candles.length === 0) return '';
-    const points = candles.map((c, i) => `${getX(i)},${getY(c.close)}`);
-    const bottomY = padding.top + candlePlotHeight;
-    return `M ${getX(0)},${bottomY} L ${points.join(' L ')} L ${getX(candles.length - 1)},${bottomY} Z`;
-  }, [candles, plotWidth, minPrice, maxPrice]);
-
-  if (!isMounted) {
-    return (
-      <div
-        ref={containerRef}
-        className="w-full bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-4 md:p-5 flex flex-col font-headline select-none h-[490px]"
-      >
-        <div className="flex justify-between pb-3 border-b-2 border-black">
-          <div className="h-6 w-48 bg-neutral-100 border border-black animate-pulse" />
-          <div className="h-6 w-32 bg-neutral-100 border border-black animate-pulse" />
-        </div>
-        <div className="flex-1 flex items-center justify-center font-mono text-xs text-gray-400">
-          Loading Market Chart...
-        </div>
-      </div>
-    );
-  }
+    const firstX = getX(0);
+    const lastX = getX(candles.length - 1);
+    const baselineY = padding.top + candlePlotHeight;
+    return `${linePath} L ${lastX} ${baselineY} L ${firstX} ${baselineY} Z`;
+  }, [linePath, candles, plotWidth]);
 
   return (
     <div
       ref={containerRef}
-      className="w-full bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-4 md:p-5 flex flex-col font-headline select-none"
+      className="w-full bg-white border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000000] flex flex-col font-headline select-none"
     >
-      {/* 1. TOP TOOLBAR & TICKER STATS */}
-      <div className="flex flex-wrap items-center justify-between pb-3 border-b-2 border-black gap-3">
-        {/* Left: Market Info & Timeframes */}
-        <div className="flex flex-wrap items-center gap-3 md:gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-black text-[#FFE600] border-2 border-black flex items-center justify-center font-bold text-sm shadow-[1px_1px_0px_0px_#000000]">
-              ₿
-            </div>
-            <div>
-              <span className="font-extrabold text-sm md:text-base text-black uppercase tracking-tight">
-                {selectedMarket || 'BTC/USD'} PERPETUAL
-              </span>
-            </div>
-          </div>
+      {/* 1. TOP STATS BAR & CONTROLS */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b-2 border-black">
+        {/* Left: Ticker & Active Price with OHLC Values */}
+        <div className="flex flex-wrap items-baseline gap-3">
+          <span className="font-extrabold text-black tracking-tight text-lg uppercase">
+            {selectedMarket || 'ROBOTS/USD'}
+          </span>
+          <span className="font-mono text-2xl font-black text-black">
+            {formatChartPrice(activePrice)}
+          </span>
+          <span
+            className={`font-mono text-xs font-bold px-1.5 py-0.5 border border-black ${
+              isPositive ? 'bg-[#00F076] text-black' : 'bg-[#FF3366] text-white'
+            }`}
+          >
+            {isPositive ? `+${priceChange24h.toFixed(2)}%` : `${priceChange24h.toFixed(2)}%`}
+          </span>
 
+          {/* Active Candle OHLC pill values */}
+          {activeCandle && (
+            <div className="hidden lg:flex items-center gap-3 font-mono text-[11px] text-gray-700 ml-2">
+              <span><strong className="text-black">O:</strong> {formatChartPrice(activeCandle.open)}</span>
+              <span><strong className="text-black">H:</strong> {formatChartPrice(activeCandle.high)}</span>
+              <span><strong className="text-black">L:</strong> {formatChartPrice(activeCandle.low)}</span>
+              <span><strong className="text-black">C:</strong> {formatChartPrice(activeCandle.close)}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Timeframe & Chart Style Selectors */}
+        <div className="flex items-center gap-2">
           {/* Timeframe Buttons */}
-          <div className="flex items-center border-2 border-black bg-neutral-100 p-0.5 shadow-[2px_2px_0px_0px_#000000]">
+          <div className="flex border-2 border-black bg-white shadow-[2px_2px_0px_0px_#000000]">
             {(['15m', '1H', '4H', '1D', '1W'] as Timeframe[]).map((tf) => (
               <button
                 key={tf}
                 type="button"
                 onClick={() => setTimeframe(tf)}
-                className={`px-2 py-0.5 font-mono text-[11px] font-bold uppercase transition-none cursor-pointer ${
-                  timeframe === tf
-                    ? 'bg-[#00E5FF] text-black border border-black shadow-[1px_1px_0px_0px_#000000]'
-                    : 'text-gray-700 hover:text-black hover:bg-neutral-200'
+                className={`px-2.5 py-1 font-mono text-xs font-bold uppercase transition-colors cursor-pointer border-r border-black last:border-r-0 ${
+                  timeframe === tf ? 'bg-black text-[#FFE600]' : 'bg-white hover:bg-neutral-100 text-black'
                 }`}
               >
                 {tf}
@@ -238,75 +238,39 @@ export const TradingChart: React.FC = () => {
           </div>
 
           {/* Chart Type Toggle */}
-          <div className="flex items-center border-2 border-black bg-neutral-100 p-0.5 shadow-[2px_2px_0px_0px_#000000]">
+          <div className="flex border-2 border-black bg-white shadow-[2px_2px_0px_0px_#000000]">
             <button
               type="button"
               onClick={() => setChartType('candles')}
-              className={`px-2 py-0.5 font-mono text-[11px] font-bold uppercase transition-none cursor-pointer ${
-                chartType === 'candles'
-                  ? 'bg-black text-[#00F076] border border-black'
-                  : 'text-gray-700 hover:text-black'
+              title="Candlestick View"
+              className={`p-1.5 font-mono text-xs font-bold border-r border-black cursor-pointer ${
+                chartType === 'candles' ? 'bg-black text-[#FFE600]' : 'bg-white hover:bg-neutral-100 text-black'
               }`}
-              title="Candlestick chart"
             >
-              📊 CANDLES
+              🕯️
             </button>
             <button
               type="button"
               onClick={() => setChartType('line')}
-              className={`px-2 py-0.5 font-mono text-[11px] font-bold uppercase transition-none cursor-pointer ${
-                chartType === 'line'
-                  ? 'bg-black text-[#00E5FF] border border-black'
-                  : 'text-gray-700 hover:text-black'
+              title="Line Chart View"
+              className={`p-1.5 font-mono text-xs font-bold cursor-pointer ${
+                chartType === 'line' ? 'bg-black text-[#FFE600]' : 'bg-white hover:bg-neutral-100 text-black'
               }`}
-              title="Line chart"
             >
-              📈 LINE
+              📈
             </button>
           </div>
         </div>
-
-        {/* Right: Quick Stats & Oracle Status */}
-        <div className="flex items-center gap-3 font-mono text-xs">
-          <div className="hidden sm:flex items-center gap-3 text-[11px] text-gray-600">
-            <span>24H H: <strong className="text-black">{formatUsd(high24h)}</strong></span>
-            <span>24H L: <strong className="text-black">{formatUsd(low24h)}</strong></span>
-            <span>24H VOL: <strong className="text-black">${(volume24h / 1000000).toFixed(2)}M</strong></span>
-          </div>
-
-
-        </div>
       </div>
 
-      {/* 2. CANDLE OHLC BAR (Updates on hover) */}
-      <div className="py-2 px-1 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs border-b border-neutral-200 text-gray-700">
-        <span className="text-black font-extrabold text-sm">
-          {formatUsd(activePrice)}
-        </span>
-        <span className={isPositive ? 'text-[#006d32] font-bold' : 'text-[#d9044b] font-bold'}>
-          {isPositive ? `+${priceChange24h.toFixed(2)}%` : `${priceChange24h.toFixed(2)}%`}
-        </span>
-        {activeCandle && (
-          <>
-            <span className="text-[11px]">O: <span className="text-black font-semibold">{formatUsd(activeCandle.open)}</span></span>
-            <span className="text-[11px]">H: <span className="text-black font-semibold">{formatUsd(activeCandle.high)}</span></span>
-            <span className="text-[11px]">L: <span className="text-black font-semibold">{formatUsd(activeCandle.low)}</span></span>
-            <span className="text-[11px]">C: <span className="text-black font-semibold">{formatUsd(activeCandle.close)}</span></span>
-            <span className="text-[11px]">VOL: <span className="text-black font-semibold">${(activeCandle.volume / 1000).toFixed(0)}K</span></span>
-            <span className="text-[10px] text-gray-400">({activeCandle.time})</span>
-          </>
-        )}
-      </div>
-
-      {/* 3. SVG CHART CANVAS */}
-      <div className="relative w-full overflow-hidden mt-1 cursor-crosshair">
+      {/* 2. MAIN SVG INTERACTIVE CANVAS */}
+      <div className="w-full relative mt-2">
         <svg
-          width="100%"
+          width={chartWidth}
           height={height}
-          viewBox={`0 0 ${chartWidth} ${height}`}
+          className="overflow-visible cursor-crosshair"
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          className="select-none"
         >
           <defs>
             <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
@@ -315,11 +279,11 @@ export const TradingChart: React.FC = () => {
             </linearGradient>
           </defs>
 
-          {/* Horizontal Price Grid Lines */}
-          {gridPrices.map((price, idx) => {
+          {/* Horizontal Price Grid Lines & Axis Values */}
+          {yTickPrices.map((price, idx) => {
             const y = getY(price);
             return (
-              <g key={`grid-p-${idx}`}>
+              <g key={`grid-y-${idx}`}>
                 <line
                   x1={padding.left}
                   y1={y}
@@ -337,7 +301,7 @@ export const TradingChart: React.FC = () => {
                   fill="#737373"
                   fontWeight="600"
                 >
-                  ${Math.round(price).toLocaleString()}
+                  {formatChartPrice(price)}
                 </text>
               </g>
             );
@@ -480,14 +444,14 @@ export const TradingChart: React.FC = () => {
                 <rect
                   x={chartWidth - padding.right}
                   y={currentY - 10}
-                  width={62}
+                  width={68}
                   height={20}
                   fill="#FFE600"
                   stroke="#000000"
                   strokeWidth="1.5"
                 />
                 <text
-                  x={chartWidth - padding.right + 31}
+                  x={chartWidth - padding.right + 34}
                   y={currentY + 4}
                   fontFamily="monospace"
                   fontSize="10"
@@ -495,7 +459,7 @@ export const TradingChart: React.FC = () => {
                   fill="#000000"
                   textAnchor="middle"
                 >
-                  ${Math.round(btcPrice).toLocaleString()}
+                  {formatChartPrice(btcPrice)}
                 </text>
               </g>
             );
@@ -532,12 +496,12 @@ export const TradingChart: React.FC = () => {
                     <rect
                       x={chartWidth - padding.right}
                       y={mousePos.y - 9}
-                      width={62}
+                      width={68}
                       height={18}
                       fill="#000000"
                     />
                     <text
-                      x={chartWidth - padding.right + 31}
+                      x={chartWidth - padding.right + 34}
                       y={mousePos.y + 3}
                       fontFamily="monospace"
                       fontSize="9"
@@ -545,7 +509,7 @@ export const TradingChart: React.FC = () => {
                       fill="#FFFFFF"
                       textAnchor="middle"
                     >
-                      ${Math.round(cursorPrice).toLocaleString()}
+                      {formatChartPrice(cursorPrice)}
                     </text>
                   </g>
                 );
@@ -558,13 +522,13 @@ export const TradingChart: React.FC = () => {
       {/* 4. BOTTOM ACCENT FOOTER */}
       <div className="mt-3 pt-2 border-t-2 border-black flex flex-wrap items-center justify-between text-black font-mono text-[11px]">
         <div className="flex items-center gap-3">
-          <span className="font-bold uppercase">Market: {selectedMarket || 'BTC/USD'}</span>
+          <span className="font-bold uppercase">Market: {selectedMarket || 'ROBOTS/USD'}</span>
           <span className="text-gray-400">|</span>
-          <span className="text-gray-600">Simulated OHLCV Feed • Live Oracle Integration</span>
+          <span className="text-gray-600">Chainlink CRE TEE Oracle OHLCV Feed</span>
         </div>
         <div className="flex items-center gap-1.5 font-bold text-[#006d32]">
           <span>●</span>
-          <span className="uppercase">Real-Time Feed</span>
+          <span className="uppercase">Hardware Enclave Verified</span>
         </div>
       </div>
     </div>

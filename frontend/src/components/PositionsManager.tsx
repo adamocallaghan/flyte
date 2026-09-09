@@ -34,7 +34,7 @@ export const PositionsManager: React.FC = () => {
     refreshBalances,
   } = useWeb3();
 
-  const { btcPrice } = useMarket();
+  const { btcPrice, selectedMarket, currentMarket } = useMarket();
 
   const [positions, setPositions] = useState<DisplayPosition[]>([]);
   const [filterMine, setFilterMine] = useState<boolean>(true);
@@ -290,7 +290,7 @@ export const PositionsManager: React.FC = () => {
                         >
                           {pos.isLong ? 'LONG' : 'SHORT'}
                         </span>
-                        <span className="font-bold text-black">BTC/USD</span>
+                        <span className="font-bold text-black">{selectedMarket || "ROBOTS/USD"}</span>
                         <span className="text-gray-500 font-normal">#{pos.id}</span>
                       </div>
                     </td>
@@ -301,7 +301,7 @@ export const PositionsManager: React.FC = () => {
                         {formatUsd(pos.notional)}
                       </div>
                       <div className="text-[11px] text-gray-700 font-medium">
-                        {pos.leverage}x • {(pos.notional / btcPrice).toFixed(4)} BTC
+                        {pos.leverage}x • {(pos.notional / (btcPrice || 1)).toFixed(4)} {currentMarket.symbol}
                       </div>
                     </td>
 
