@@ -439,9 +439,16 @@ contract PerpAquaApp is AquaApp {
             lpPayout = lpBalance - reward;
             traderPayout = traderBalance;
         } else if (pnl < 0) {
-            if (reward > traderBalance) reward = traderBalance;
-            traderPayout = traderBalance - reward;
-            lpPayout = lpBalance;
+            if (reward <= traderBalance) {
+                traderPayout = traderBalance - reward;
+                lpPayout = lpBalance;
+            } else {
+                uint256 deficit = reward - traderBalance;
+                traderPayout = 0;
+                if (deficit > lpBalance) deficit = lpBalance;
+                lpPayout = lpBalance - deficit;
+                reward = traderBalance + deficit;
+            }
         } else {
             if (reward > lpBalance) reward = lpBalance;
             lpPayout = lpBalance - reward;

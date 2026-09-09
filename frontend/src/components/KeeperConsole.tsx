@@ -170,10 +170,28 @@ export const KeeperConsole: React.FC = () => {
         const tx = await (contractToCall as any).liquidate(pos.id, gasLimit ? { gasLimit } : {});
         const receipt = await tx.wait();
 
-        setTotalRewardsClaimed((prev) => prev + pos.keeperRewardEst);
+        let actualReward = pos.keeperRewardEst;
+        if (receipt && receipt.logs && appContract) {
+          for (const log of receipt.logs) {
+            try {
+              const parsed = appContract.interface.parseLog({
+                topics: [...log.topics],
+                data: log.data,
+              });
+              if (parsed && parsed.name === 'PositionLiquidated') {
+                actualReward = Number(ethers.formatUnits(parsed.args.reward, 6));
+                break;
+              }
+            } catch {
+              // Not a matching PerpAquaApp event log
+            }
+          }
+        }
+
+        setTotalRewardsClaimed((prev) => prev + actualReward);
         setStatusMessage({
           type: 'success',
-          text: `🎉 Liquidation successful! Position #${pos.id} liquidated. Keeper reward of ${formatUsd(pos.keeperRewardEst)} aUSDC sent to ${keeperLabel}! Tx: ${shortenAddress(receipt.hash)}`,
+          text: `🎉 Liquidation successful! Position #${pos.id} liquidated. Keeper reward of ${formatUsd(actualReward)} aUSDC sent to ${keeperLabel}! Tx: ${shortenAddress(receipt.hash)}`,
         });
 
         await scanPositions();

@@ -88,19 +88,20 @@ async function main() {
     whaleSigner
   );
 
+  // Set max allowance for Aave pool (resetting first to adhere to USDC race-protection)
+  await (await usdc.approve(AAVE_POOL, 0)).wait();
+  await (await usdc.approve(AAVE_POOL, ethers.MaxUint256)).wait();
+
   // Supply 100k USDC for Grimace
   const amtLp = ethers.parseUnits('100000', 6);
-  await (await usdc.approve(AAVE_POOL, amtLp)).wait();
   await (await aavePool.supply(USDC_ADDRESS, amtLp, GRIMACE_LP, 0)).wait();
 
   // Supply 50k USDC for Trader Hamburglar
   const amtTrader = ethers.parseUnits('50000', 6);
-  await (await usdc.approve(AAVE_POOL, amtTrader)).wait();
   await (await aavePool.supply(USDC_ADDRESS, amtTrader, TRADER_ADDR, 0)).wait();
 
   // Supply 10k USDC for Keeper
   const amtKeeper = ethers.parseUnits('10000', 6);
-  await (await usdc.approve(AAVE_POOL, amtKeeper)).wait();
   await (await aavePool.supply(USDC_ADDRESS, amtKeeper, KEEPER_ADDR, 0)).wait();
 
   await provider.send('anvil_stopImpersonatingAccount', [USDC_WHALE]);

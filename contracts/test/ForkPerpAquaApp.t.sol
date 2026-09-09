@@ -488,4 +488,50 @@ contract ForkPerpAquaAppTest is Test {
         assertFalse(pos.isOpen, "Position must be closed");
         assertEq(app.totalLongOi(), 0, "Long OI must be 0");
     }
+
+    /// @notice Scenario 10: Extreme market crash wipes out trader equity (bad debt condition)
+    /// Liquidator reward is guaranteed by deducting from LP balance without insolvency
+    function test_Fork_Scenario10_Liquidation_ExtremeCrash_BadDebtCovered() public {
+        _shipDefaultQuote(10_000e6);
+
+        // Trader opens Long of 1,000 Notional at 5x leverage ($200 margin)
+        vm.startPrank(trader);
+        aUsdc.approve(address(app), type(uint256).max);
+        uint256 posId = app.openPosition(defaultStrategy, true, 1_000e6, 5);
+        vm.stopPrank();
+
+        // Crash price by -40% ($60,000 down to $36,000) -> 5x leverage means -200% loss (wiping out $200 margin completely)
+        oracle.setPrice(A_USDC, 36_000e18);
+
+        (bool liquidatable, bool viaDefault) = app.isLiquidatable(posId);
+        assertTrue(liquidatable, "Position must be liquidatable");
+        assertFalse(viaDefault, "Must not be via funding default");
+
+        uint256 keeperPreBalance = aUsdc.balanceOf(keeper);
+        uint256 traderPreBalance = aUsdc.balanceOf(trader);
+        uint256 lpPreBalance = aUsdc.balanceOf(lp);
+
+        // Ronald (keeper) liquidates the position
+        vm.prank(keeper);
+        uint256 reward = app.liquidate(posId);
+
+        uint256 keeperPostBalance = aUsdc.balanceOf(keeper);
+        uint256 traderPostBalance = aUsdc.balanceOf(trader);
+        uint256 lpPostBalance = aUsdc.balanceOf(lp);
+
+        // Keeper bounty: 1% of $1,000 notional = 10 aUSDC
+        // Trader has $0 equity, so the $10 keeper reward is funded from the $400 total pool (LP margin + trader margin)
+        assertEq(reward, 10e6, "Keeper reward must be 10 aUSDC despite 0 trader equity");
+        assertApproxEqAbs(keeperPostBalance - keeperPreBalance, 10e6, 2, "Keeper balance must increase by 10 aUSDC");
+
+        // Trader gets 0 payout
+        assertEq(traderPostBalance, traderPreBalance, "Trader equity was wiped out, must get 0");
+
+        // LP receives remaining balance (400 - 10 = 390 aUSDC)
+        assertApproxEqAbs(lpPostBalance - lpPreBalance, 390e6, 2, "LP must receive 390 aUSDC");
+
+        // Position is closed
+        PerpAquaApp.Position memory closedPos = app.getPosition(posId);
+        assertFalse(closedPos.isOpen, "Position must be closed");
+    }
 }
