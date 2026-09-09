@@ -115,7 +115,7 @@ export const LPConsole: React.FC = () => {
         'tuple(address lp, address collateralToken, uint256 maxNotional, uint256 maxLeverage, uint256 spreadBps, uint8 sideMask, uint256 quoteExpiry)',
       ];
 
-      const loaded: ShippedQuote[] = [];
+      const quoteMap = new Map<string, ShippedQuote>();
 
       for (const log of appShipped) {
         const maker = (log as any).args?.[0];
@@ -141,7 +141,7 @@ export const LPConsole: React.FC = () => {
             if (currentBalance === 0) isDocked = true;
           } catch {}
 
-          loaded.push({
+          quoteMap.set(strategyHash.toLowerCase(), {
             strategyHash,
             maker,
             collateralToken,
@@ -158,6 +158,7 @@ export const LPConsole: React.FC = () => {
         }
       }
 
+      const loaded = Array.from(quoteMap.values());
       if (loaded.length > 0) {
         setShippedQuotes(loaded);
       }
@@ -675,7 +676,7 @@ export const LPConsole: React.FC = () => {
             <tbody>
               {shippedQuotes.map((q, idx) => (
                 <tr
-                  key={q.strategyHash}
+                  key={`${q.strategyHash}-${idx}`}
                   className={`border-b-2 border-black transition-colors ${
                     q.status === 'docked' ? 'opacity-50 ' : ''
                   }${idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'} hover:bg-[#FFFBEA]`}

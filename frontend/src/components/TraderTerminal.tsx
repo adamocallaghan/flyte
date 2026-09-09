@@ -84,7 +84,7 @@ export const TraderTerminal: React.FC = () => {
         'tuple(address lp, address collateralToken, uint256 maxNotional, uint256 maxLeverage, uint256 spreadBps, uint8 sideMask, uint256 quoteExpiry)',
       ];
 
-      const list: ActiveAquaQuote[] = [];
+      const quoteMap = new Map<string, ActiveAquaQuote>();
 
       for (const log of appShipped) {
         const maker = (log as any).args?.[0];
@@ -111,7 +111,7 @@ export const TraderTerminal: React.FC = () => {
           } catch {}
 
           if (currentBalance > 0) {
-            list.push({
+            quoteMap.set(strategyHash.toLowerCase(), {
               strategyHash,
               maker,
               collateralToken,
@@ -137,7 +137,7 @@ export const TraderTerminal: React.FC = () => {
         }
       }
 
-      setActiveQuotes(list);
+      setActiveQuotes(Array.from(quoteMap.values()));
     } catch (err) {
       console.warn('Could not load Aqua quotes in TraderTerminal:', err);
     } finally {
