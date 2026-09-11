@@ -480,9 +480,9 @@ export const LPConsole: React.FC = () => {
               onChange={(e) => setSideMask(parseInt(e.target.value))}
               className="w-full bg-[#FAFAFA] border-2 border-black p-2.5 font-mono text-sm font-bold text-black focus:outline-none focus:bg-white cursor-pointer"
             >
-              <option value="3">Both Longs &amp; Shorts (Mask = 3)</option>
-              <option value="1">Longs Only (Mask = 1)</option>
-              <option value="2">Shorts Only (Mask = 2)</option>
+              <option value="3">Both Longs &amp; Shorts</option>
+              <option value="1">Longs Only</option>
+              <option value="2">Shorts Only</option>
             </select>
           </div>
         </div>
@@ -650,7 +650,7 @@ export const LPConsole: React.FC = () => {
                   </td>
                   <td className="py-3 px-3 border-r border-black">
                     <span className="font-bold text-[11px] bg-white border border-black px-1.5 py-0.5 shadow-[1px_1px_0px_0px_#000000]">
-                      {q.sideMask === 3 ? 'Long & Short' : q.sideMask === 1 ? 'Longs Only' : 'Shorts Only'}
+                      {q.sideMask === 3 ? 'Both Longs & Shorts' : q.sideMask === 1 ? 'Longs Only' : 'Shorts Only'}
                     </span>
                   </td>
                   <td className="py-3 px-3 border-r border-black">
