@@ -103,12 +103,14 @@ export async function queryFilterInChunks(
   chunkSize = 50000
 ): Promise<any[]> {
   if (toBlock < fromBlock) return [];
-  if (toBlock - fromBlock <= chunkSize) {
-    return await contract.queryFilter(filter, fromBlock, toBlock).catch(() => []);
+  // Safety cap: never scan more than 500,000 blocks to prevent memory exhaustion or thousands of promises
+  const safeFrom = Math.max(fromBlock, toBlock - 500000);
+  if (toBlock - safeFrom <= chunkSize) {
+    return await contract.queryFilter(filter, safeFrom, toBlock).catch(() => []);
   }
 
   const promises: Promise<any[]>[] = [];
-  for (let b = fromBlock; b <= toBlock; b += chunkSize) {
+  for (let b = safeFrom; b <= toBlock; b += chunkSize) {
     const end = Math.min(b + chunkSize - 1, toBlock);
     promises.push(contract.queryFilter(filter, b, end).catch(() => []));
   }
@@ -121,7 +123,8 @@ export async function queryFilterInChunks(
  * Get starting block for event scanning based on chain ID and deployment block.
  */
 export function getEventStartBlock(currentBlock: number, chainId: number | null): number {
-  if (chainId === ARBITRUM_ONE_CHAIN_ID || (chainId !== ANVIL_CHAIN_ID && chainId !== null)) {
+  // If currentBlock is on Arbitrum One (> 1,000,000) or chainId is Arbitrum One, use deployment block
+  if (currentBlock > 1000000 || chainId === ARBITRUM_ONE_CHAIN_ID || (chainId !== ANVIL_CHAIN_ID && chainId !== null)) {
     return Math.max(FLYTE_DEPLOYMENT_BLOCK, currentBlock - 300000);
   }
   return 0;

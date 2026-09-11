@@ -8,6 +8,7 @@ import {
   A_USDC_ADDRESS,
   AQUA_REGISTRY_ADDRESS,
   DEMO_ROLES,
+  DEFAULT_PERP_APP_ADDRESS,
   queryFilterInChunks,
   getEventStartBlock,
 } from '../config/contracts';
@@ -50,7 +51,43 @@ export const SharedCoverage: React.FC = () => {
     chainId,
   } = useWeb3();
 
-  const [strategies, setStrategies] = useState<StrategyCoverage[]>([]);
+  const cacheKey = `flyte_aqua_quotes_${(appAddress || DEFAULT_PERP_APP_ADDRESS).toLowerCase()}`;
+
+  const getCachedQuotes = useCallback((): any[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem(cacheKey);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  }, [cacheKey]);
+
+  const [strategies, setStrategies] = useState<StrategyCoverage[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(`flyte_aqua_quotes_${DEFAULT_PERP_APP_ADDRESS.toLowerCase()}`);
+        if (saved) {
+          const quotes: any[] = JSON.parse(saved);
+          return quotes
+            .filter((q: any) => q.status !== 'docked')
+            .map((q: any) => ({
+              strategyHash: q.strategyHash,
+              maker: q.maker,
+              maxNotional: q.maxNotional,
+              walletBalance: q.currentBalance || q.maxNotional,
+              allowance: 1000000,
+              coverageRatio: 100,
+              status: 'covered' as const,
+              maxLeverage: q.maxLeverage,
+              spreadBps: q.spreadBps,
+              sideMask: q.sideMask,
+            }));
+        }
+      } catch {}
+    }
+    return [];
+  });
   const [pullLogs, setPullLogs] = useState<AquaPullLog[]>([]);
   const [activeLockedMargin, setActiveLockedMargin] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -154,13 +191,60 @@ export const SharedCoverage: React.FC = () => {
             }
           }
 
+          // Seamlessly merge with active quotes from Liquidity page cache
+          const cached = getCachedQuotes();
+          for (const q of cached) {
+            if (q.status === 'docked' || dockedHashes.has(q.strategyHash.toLowerCase())) continue;
+            if (!quoteMap.has(q.strategyHash.toLowerCase())) {
+              const makerAddr = q.maker.toLowerCase();
+              const balance = makerBalanceMap.get(makerAddr) || q.currentBalance || q.maxNotional;
+              const allowance = makerAllowanceMap.get(makerAddr) || 1000000;
+              const ratio = q.maxNotional > 0 ? (balance / q.maxNotional) * 100 : 100;
+              const status: 'covered' | 'partial' | 'insufficient' =
+                ratio >= 99 ? 'covered' : ratio > 0 ? 'partial' : 'insufficient';
+
+              quoteMap.set(q.strategyHash.toLowerCase(), {
+                strategyHash: q.strategyHash,
+                maker: q.maker,
+                maxNotional: q.maxNotional,
+                walletBalance: balance,
+                allowance,
+                coverageRatio: ratio,
+                status,
+                maxLeverage: q.maxLeverage,
+                spreadBps: q.spreadBps,
+                sideMask: q.sideMask,
+              });
+            }
+          }
+
           activeStrategies = Array.from(quoteMap.values());
         } catch (e) {
           console.warn('Could not query Aqua strategies for coverage:', e);
         }
       }
 
-      setStrategies(activeStrategies);
+      if (activeStrategies.length > 0) {
+        setStrategies(activeStrategies);
+      } else {
+        const cachedFallback = getCachedQuotes()
+          .filter((q: any) => q.status !== 'docked')
+          .map((q: any) => ({
+            strategyHash: q.strategyHash,
+            maker: q.maker,
+            maxNotional: q.maxNotional,
+            walletBalance: q.currentBalance || q.maxNotional,
+            allowance: 1000000,
+            coverageRatio: 100,
+            status: 'covered' as const,
+            maxLeverage: q.maxLeverage,
+            spreadBps: q.spreadBps,
+            sideMask: q.sideMask,
+          }));
+        if (cachedFallback.length > 0) {
+          setStrategies(cachedFallback);
+        }
+      }
 
       // 2. Query On-Chain Aqua JIT Pull Events (PositionOpened & Closed from PerpApp)
       let totalLocked = 0;
@@ -269,7 +353,7 @@ export const SharedCoverage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [provider, appAddress, chainId, aquaContract, aUsdcContract, appContract]);
+  }, [provider, appAddress, chainId, aquaContract, aUsdcContract, appContract, getCachedQuotes]);
 
   useEffect(() => {
     loadCoverageData();
