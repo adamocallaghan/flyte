@@ -25,17 +25,7 @@ export interface ShippedQuote {
   status: 'active' | 'docked';
 }
 
-const DEFAULT_DEFAULT_QUOTE: ShippedQuote = {
-  strategyHash: '0x8f2d5e3c7b1a40992384a6c8e5f1b0a2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8',
-  maker: DEMO_ROLES.lp.address,
-  collateralToken: A_USDC_ADDRESS,
-  maxNotional: 50000,
-  maxLeverage: 10,
-  spreadBps: 10,
-  sideMask: 3,
-  quoteExpiry: 0,
-  status: 'active',
-};
+
 
 export const LPConsole: React.FC = () => {
   const {
@@ -65,7 +55,7 @@ export const LPConsole: React.FC = () => {
   const [sideMask, setSideMask] = useState<number>(3); // 3 = Both, 1 = Long, 2 = Short
   const [quoteExpiry, setQuoteExpiry] = useState<number>(0); // 0 = perpetual
 
-  const [shippedQuotes, setShippedQuotes] = useState<ShippedQuote[]>([DEFAULT_DEFAULT_QUOTE]);
+  const [shippedQuotes, setShippedQuotes] = useState<ShippedQuote[]>([]);
   const [isApproving, setIsApproving] = useState<boolean>(false);
   const [isShipping, setIsShipping] = useState<boolean>(false);
   const [dockingHash, setDockingHash] = useState<string | null>(null);
@@ -159,9 +149,7 @@ export const LPConsole: React.FC = () => {
       }
 
       const loaded = Array.from(quoteMap.values());
-      if (loaded.length > 0) {
-        setShippedQuotes(loaded);
-      }
+      setShippedQuotes(loaded);
     } catch (err) {
       console.warn('Could not load Aqua strategies:', err);
     }
@@ -604,7 +592,20 @@ export const LPConsole: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {shippedQuotes.map((q, idx) => (
+              {shippedQuotes.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 px-4 text-center bg-white text-gray-500 font-mono text-xs">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <span className="text-3xl">⚓</span>
+                      <span className="font-bold text-black uppercase text-sm">No Active Aqua Strategies Shipped Yet</span>
+                      <p className="text-gray-600 max-w-md">
+                        Claim 5,000 aUSDC from the faucet above and ship your first JIT liquidity strategy to 1inch Aqua. Your capital will remain unencumbered in your wallet earning continuous Aave yield until filled.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                shippedQuotes.map((q, idx) => (
                 <tr
                   key={`${q.strategyHash}-${idx}`}
                   className={`border-b-2 border-black transition-colors ${
@@ -612,7 +613,16 @@ export const LPConsole: React.FC = () => {
                   }${idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'} hover:bg-[#FFFBEA]`}
                 >
                   <td className="py-3 px-3 border-r border-black font-bold text-[#006d32]">
-                    {shortenAddress(q.strategyHash, 6)}
+                    <a
+                      href={`https://arbiscan.io/search?q=${q.strategyHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#006875] hover:underline flex items-center gap-1"
+                      title="View strategy hash on Arbiscan"
+                    >
+                      <span>{shortenAddress(q.strategyHash, 6)}</span>
+                      <span className="text-[10px]">↗</span>
+                    </a>
                   </td>
                   <td className="py-3 px-3 border-r border-black font-bold text-black">
                     <div className="flex items-center gap-1.5">
@@ -669,7 +679,7 @@ export const LPConsole: React.FC = () => {
                     )}
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>
