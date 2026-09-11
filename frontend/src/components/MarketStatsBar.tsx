@@ -84,7 +84,10 @@ export const MarketStatsBar: React.FC = () => {
                   }`}>
                     {currentMarket.category}
                   </span>
-                  <span className="border border-black font-mono px-1.5 py-0.2 text-[10px] font-bold uppercase bg-[#00F076] text-black">
+                  <span className={`border border-black font-mono px-1.5 py-0.2 text-[10px] font-bold uppercase ${
+                    currentMarket.status === 'LIVE PERP' ? 'bg-[#00F076] text-black' :
+                    currentMarket.status === 'ORACLE FEED' ? 'bg-[#00E5FF] text-black' : 'bg-gray-200 text-black'
+                  }`}>
                     {currentMarket.status}
                   </span>
                 </div>

@@ -51,7 +51,7 @@ export const TraderTerminal: React.FC = () => {
     refreshBalances,
   } = useWeb3();
 
-  const { btcPrice, setMarketPrice, selectedMarket, currentMarket } = useMarket();
+  const { btcPrice, setMarketPrice, selectedMarket, setSelectedMarket, currentMarket } = useMarket();
 
   // Order Form State
   const [isLong, setIsLong] = useState<boolean>(false);
@@ -523,8 +523,34 @@ export const TraderTerminal: React.FC = () => {
           </div>
         )}
 
-        {/* 5. Action Buttons (Approve / Submit) */}
-        {!isAllowanceSufficient ? (
+        {/* Telemetry Stream Notice for non-ROBOTS markets */}
+        {currentMarket.id !== 'ROBOTS/USD' && (
+          <div className="mb-4 p-3 bg-[#FFFBEA] border-2 border-black text-black font-mono text-xs shadow-[2px_2px_0px_0px_#000000] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <strong className="block text-black uppercase font-black text-[11px]">📡 Live Attention Telemetry Feed:</strong>
+              <span>{currentMarket.name} is streaming on-chain oracle data. Perp execution on Arbitrum One is active on <strong>ROBOTS/USD</strong>.</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedMarket('ROBOTS/USD')}
+              className="bg-[#FFE600] hover:bg-[#ffe000] text-black font-black px-2.5 py-1.5 border border-black shadow-[1px_1px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-[10px] shrink-0 cursor-pointer uppercase"
+            >
+              Trade ROBOTS/USD
+            </button>
+          </div>
+        )}
+
+        {/* 5. Action Buttons (Approve / Submit / Switch Market) */}
+        {currentMarket.id !== 'ROBOTS/USD' ? (
+          <button
+            type="button"
+            onClick={() => setSelectedMarket('ROBOTS/USD')}
+            className="w-full h-14 px-8 font-black bg-[#FFE600] hover:bg-[#ffe100] text-black border-2 border-black font-headline font-black text-sm uppercase tracking-wider shadow-[4px_4px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-2"
+          >
+            <span>🔄</span>
+            <span>Switch to ROBOTS/USD to Trade Live Perp</span>
+          </button>
+        ) : !isAllowanceSufficient ? (
           <button
             type="button"
             onClick={handleApprove}

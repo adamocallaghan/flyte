@@ -30,7 +30,7 @@ export interface MarketInfo {
   symbol: string;
   icon: string;
   maxLeverage: string;
-  status: 'LIVE' | 'DEMO';
+  status: 'LIVE PERP' | 'ORACLE FEED' | 'DEMO';
   basePrice: number;
   category: 'TECH' | 'CULTURAL' | 'CRYPTO';
   description: string;
@@ -48,7 +48,7 @@ export const AVAILABLE_MARKETS: MarketInfo[] = [
     icon: '🤖',
     category: 'TECH',
     maxLeverage: '10x',
-    status: 'LIVE',
+    status: 'LIVE PERP',
     basePrice: 75.50,
     description: 'Autonomous humanoid robotics & embodied physical AI sentiment index',
     virtualAssetAddress: '0x1111111111111111111111111111111111110001',
@@ -63,7 +63,7 @@ export const AVAILABLE_MARKETS: MarketInfo[] = [
     icon: '🎮',
     category: 'CULTURAL',
     maxLeverage: '10x',
-    status: 'LIVE',
+    status: 'ORACLE FEED',
     basePrice: 42.10,
     description: 'Gaming cultural hype, trailer metrics & entertainment buzz index',
     virtualAssetAddress: '0x1111111111111111111111111111111111110002',
@@ -78,7 +78,7 @@ export const AVAILABLE_MARKETS: MarketInfo[] = [
     icon: '⚡',
     category: 'TECH',
     maxLeverage: '10x',
-    status: 'LIVE',
+    status: 'ORACLE FEED',
     basePrice: 88.40,
     description: 'Open-weights frontier LLM benchmark mentions & developer mindshare index',
     virtualAssetAddress: '0x1111111111111111111111111111111111110003',
