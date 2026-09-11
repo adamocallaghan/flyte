@@ -1,0 +1,39 @@
+{
+  "network": "arbitrum-one",
+  "chainId": 42161,
+  "rpcUrl": "https://arb1.arbitrum.io/rpc",
+  "deployer": "0xFeAeB3825292A031989fD8CC29465fb5f9df5365",
+  "contracts": {
+    "MockAaveYieldToken": {
+      "address": "0x20C0Ba2e4e87e15eFD383acc7C10e422d9c4D409",
+      "symbol": "aUSDC",
+      "decimals": 6,
+      "txHash": "0xbd16a122990cc41b2edc4da0cbde491e3c1dba8a578e4af21b4a0dfb458aef90",
+      "arbiscan": "https://arbiscan.io/address/0x20C0Ba2e4e87e15eFD383acc7C10e422d9c4D409"
+    },
+    "AttentionOracle": {
+      "address": "0x5bE054244618317f503CF1E1Ee268CEa21b1B424",
+      "txHash": "0x0d46846c1389227b9d585df96889a6180b846abd105078ef1efc34278bffb169",
+      "arbiscan": "https://arbiscan.io/address/0x5bE054244618317f503CF1E1Ee268CEa21b1B424"
+    },
+    "PerpAquaApp": {
+      "address": "0x952745CFF543A7c2A03A072C6d60C67ad91767Ca",
+      "txHash": "0x7d764e61389c32fbee64a44a9c015371df29de355fe6bcbce9b04d3646a04367",
+      "arbiscan": "https://arbiscan.io/address/0x952745CFF543A7c2A03A072C6d60C67ad91767Ca"
+    },
+    "PerpSwapVMRouter": {
+      "address": "0xb27c3FB38264902e1f00C196E6904896042796B6",
+      "txHash": "0x86114e7d64e9143ccf4ac3a4a357213afb3c7d20ea803c351d31d3e92892c416",
+      "arbiscan": "https://arbiscan.io/address/0xb27c3FB38264902e1f00C196E6904896042796B6"
+    }
+  },
+  "dependencies": {
+    "AquaRegistry": "0x1111113CCf1426A8E30e2bfF5E005d929bF6a90a",
+    "WETH": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+  },
+  "markets": {
+    "ROBOTS": "0x1111111111111111111111111111111111110001",
+    "GTA6": "0x1111111111111111111111111111111111110002",
+    "DEEPSEEK": "0x1111111111111111111111111111111111110003"
+  }
+}
