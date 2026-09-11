@@ -157,31 +157,6 @@ export const SharedCoverage: React.FC = () => {
         }
       }
 
-      // Fallback: If no active strategies returned from RPC, use default demo strategy
-      if (activeStrategies.length === 0) {
-        let grimaceBal = 50000;
-        if (aUsdcContract) {
-          try {
-            const b = await aUsdcContract.balanceOf(DEMO_ROLES.lp.address);
-            grimaceBal = parseFloat(ethers.formatUnits(b, 6));
-          } catch {}
-        }
-        activeStrategies = [
-          {
-            strategyHash: '0x6319552918f842099f7a1ea167c5d8dfba1f4dd2f8679f8c13f9ab48c4906cde',
-            maker: DEMO_ROLES.lp.address,
-            maxNotional: 50000,
-            walletBalance: grimaceBal,
-            allowance: 1000000,
-            coverageRatio: (grimaceBal / 50000) * 100,
-            status: grimaceBal >= 50000 ? 'covered' : 'partial',
-            maxLeverage: 10,
-            spreadBps: 10,
-            sideMask: 3,
-          },
-        ];
-      }
-
       setStrategies(activeStrategies);
 
       // 2. Query On-Chain Aqua JIT Pull Events (PositionOpened & Closed from PerpApp)
@@ -363,14 +338,18 @@ export const SharedCoverage: React.FC = () => {
             </span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="font-mono text-2xl md:text-3xl font-black text-black">
-                {globalCoverageRatio.toFixed(1)}%
+                {strategies.length === 0 ? '—' : `${globalCoverageRatio.toFixed(1)}%`}
               </span>
               <span
                 className={`font-mono text-[10px] font-bold px-1.5 py-0.5 border border-black uppercase ${
-                  isFullyCovered ? 'bg-[#00F076] text-black' : 'bg-[#FFE600] text-black'
+                  strategies.length === 0
+                    ? 'bg-gray-200 text-gray-700'
+                    : isFullyCovered
+                    ? 'bg-[#00F076] text-black'
+                    : 'bg-[#FFE600] text-black'
                 }`}
               >
-                {isFullyCovered ? 'FULLY BACKED' : 'PARTIAL'}
+                {strategies.length === 0 ? 'NO STRATEGIES' : isFullyCovered ? 'FULLY BACKED' : 'PARTIAL'}
               </span>
             </div>
             <span className="font-mono text-[11px] text-gray-600 mt-1 block">
@@ -483,7 +462,14 @@ export const SharedCoverage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {strategies.map((s, idx) => {
+              {strategies.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-gray-500 font-mono text-xs">
+                    No active Aqua strategies shipped to Flyte on this network yet.
+                  </td>
+                </tr>
+              ) : (
+                strategies.map((s, idx) => {
                 const isUser = account && s.maker.toLowerCase() === account.toLowerCase();
                 const isGrimace = s.maker.toLowerCase() === DEMO_ROLES.lp.address.toLowerCase();
                 const makerLabel = isUser ? `${shortenAddress(s.maker)} (You)` : isGrimace ? `Grimace (${shortenAddress(s.maker)})` : shortenAddress(s.maker);
@@ -568,7 +554,7 @@ export const SharedCoverage: React.FC = () => {
                     </td>
                   </tr>
                 );
-              })}
+              }))}
             </tbody>
           </table>
         </div>

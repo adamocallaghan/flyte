@@ -127,7 +127,7 @@ export interface MarketStats {
   historicalReports: OnChainHistoricalReport[];
   allMarketHistories: Record<string, OnChainHistoricalReport[]>;
   setMarketPrice: (priceInUsd: number) => Promise<boolean>;
-  refreshMarketStats: () => Promise<void>;
+  refreshMarketStats: (marketOverride?: MarketInfo) => Promise<void>;
 }
 
 const DEFAULT_STATS: MarketStats = {
@@ -164,7 +164,7 @@ const DEFAULT_STATS: MarketStats = {
     consensus: 'Workflow DON (BFT Consensus)',
   },
   setMarketPrice: async () => false,
-  refreshMarketStats: async () => {},
+  refreshMarketStats: async (_m?: MarketInfo) => {},
 };
 
 const MarketContext = createContext<MarketStats>(DEFAULT_STATS);
@@ -281,7 +281,104 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [btcPrice, currentMarket, oracleContract, isFork]
   );
 
-  // Switch Market and optionally sync oracle price to active market base
+  // Fetch Live On-Chain Price, Attention Data, and Open Interest
+  const refreshMarketStats = useCallback(
+    async (marketOverride?: MarketInfo) => {
+      if (!oracleContract) return;
+
+      const activeMkt = marketOverride || currentMarket;
+      setIsOracleLoading(true);
+      try {
+        // 1. Fetch Oracle Price for Active Market using its specific virtual asset address
+        const assetAddress = activeMkt.virtualAssetAddress || A_USDC_ADDRESS;
+        let priceRaw: bigint = await oracleContract.getPrice(assetAddress).catch(() => BigInt(0));
+
+        // 2. Fetch Live Attention Report from AttentionOracle if available
+        try {
+          if (typeof (oracleContract as any).getAttentionData === 'function') {
+            const report = await (oracleContract as any).getAttentionData(activeMkt.symbol);
+            if (report && report.isConfigured) {
+              setAttentionTelemetry({
+                sentimentScore: Number(report.sentimentScore),
+                socialVelocity: Number(report.socialVelocity),
+                newsMentions24h: Number(report.newsMentions24h),
+                lastUpdatedAt: Number(report.lastUpdatedAt),
+                enclaveType: 'AWS Nitro Enclave',
+                status: 'ATTESTED & SECURE',
+                provider: 'Chainlink CRE',
+                consensus: 'Workflow DON (BFT Consensus)',
+              });
+
+              // Fallback to report.indexPrice if getPrice returned 0
+              if (priceRaw === BigInt(0) && report.indexPrice && BigInt(report.indexPrice) > BigInt(0)) {
+                priceRaw = BigInt(report.indexPrice);
+              }
+            }
+          }
+        } catch {
+          // use fallback telemetry
+        }
+
+        if (priceRaw > BigInt(0)) {
+          const parsedPrice = parseFloat(ethers.formatUnits(priceRaw, 18));
+          setBtcPrice((prev) => {
+            if (parsedPrice > prev) setPriceDirection('up');
+            else if (parsedPrice < prev) setPriceDirection('down');
+            else setPriceDirection('neutral');
+            return parsedPrice;
+          });
+          setRawBtcPrice(priceRaw);
+          const baseRef = activeMkt.basePrice || 75.50;
+          const pctDelta = ((parsedPrice - baseRef) / baseRef) * 100;
+          setPriceChange24h(pctDelta);
+        }
+
+        // 3. Fetch On-Chain Historical Reports
+        try {
+          if (typeof (oracleContract as any).getHistoricalReports === 'function') {
+            const rawHistory: any[] = await (oracleContract as any).getHistoricalReports(activeMkt.symbol, 50);
+            if (rawHistory && rawHistory.length > 0) {
+              const parsed: OnChainHistoricalReport[] = rawHistory.map((item: any) => ({
+                timestamp: Number(item.timestamp),
+                indexPrice: parseFloat(ethers.formatUnits(item.indexPrice, 18)),
+                sentimentScore: Number(item.sentimentScore),
+                socialVelocity: Number(item.socialVelocity),
+                newsMentions24h: Number(item.newsMentions24h),
+              }));
+              setHistoricalReports(parsed);
+              setAllMarketHistories((prev) => ({
+                ...prev,
+                [activeMkt.id]: parsed,
+              }));
+            }
+          }
+        } catch (historyErr) {
+          // preserve existing history
+        }
+
+        // 4. Fetch App Open Interest
+        if (appContract) {
+          try {
+            const [lOi, sOi] = await Promise.all([
+              appContract.totalLongOi().catch(() => BigInt(0)),
+              appContract.totalShortOi().catch(() => BigInt(0)),
+            ]);
+            setLongOi(lOi);
+            setShortOi(sOi);
+          } catch {
+            // ignore if app not deployed
+          }
+        }
+      } catch (err: any) {
+        console.warn('Could not read oracle price:', err);
+      } finally {
+        setIsOracleLoading(false);
+      }
+    },
+    [oracleContract, appContract, currentMarket]
+  );
+
+  // Switch Market and sync price immediately
   const setSelectedMarket = useCallback(
     (marketId: string) => {
       setSelectedMarketState(marketId);
@@ -296,104 +393,57 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         provider: 'Chainlink CRE',
         consensus: 'Workflow DON (BFT Consensus)',
       });
-      setHistoricalReports(
-        allMarketHistories[marketId] || generateDefaultHistory(target.basePrice, target.symbol)
-      );
+
+      // Synchronize cached history immediately
+      setAllMarketHistories((prev) => {
+        const cached = prev[marketId];
+        if (cached && cached.length > 0) {
+          setHistoricalReports(cached);
+        } else {
+          setHistoricalReports(generateDefaultHistory(target.basePrice, target.symbol));
+        }
+        return prev;
+      });
+
+      // Set target price immediately to eliminate any flash or revert
+      setBtcPrice(target.basePrice);
+      setRawBtcPrice(ethers.parseUnits(target.basePrice.toFixed(2), 18));
+      setPriceDirection('neutral');
+      setPriceChange24h(0);
+
+      // Trigger immediate live refresh for the selected market
+      refreshMarketStats(target);
 
       // Synchronize on-chain price on Anvil so trades use market price
       if (isFork) {
         setMarketPrice(target.basePrice);
-      } else {
-        setBtcPrice(target.basePrice);
-        setRawBtcPrice(ethers.parseUnits(target.basePrice.toFixed(2), 18));
       }
     },
-    [isFork, setMarketPrice]
+    [isFork, setMarketPrice, refreshMarketStats]
   );
 
-  // Fetch Live On-Chain Price, Attention Data, and Open Interest
-  const refreshMarketStats = useCallback(async () => {
-    if (!oracleContract) return;
-
-    setIsOracleLoading(true);
-    try {
-      // 1. Fetch Oracle Price for Active Market (A_USDC)
-      const priceRaw: bigint = await oracleContract.getPrice(A_USDC_ADDRESS).catch(() => BigInt(0));
-
-      if (priceRaw > BigInt(0)) {
-        const parsedPrice = parseFloat(ethers.formatUnits(priceRaw, 18));
-        setBtcPrice((prev) => {
-          if (parsedPrice > prev) setPriceDirection('up');
-          else if (parsedPrice < prev) setPriceDirection('down');
-          else setPriceDirection('neutral');
-          return parsedPrice;
-        });
-        setRawBtcPrice(priceRaw);
-      }
-
-      // 2. Fetch Live Attention Report from AttentionOracle if available
+  // Prefetch all markets on-chain historical reports on mount / oracle ready
+  useEffect(() => {
+    if (!oracleContract || typeof (oracleContract as any).getHistoricalReports !== 'function') return;
+    AVAILABLE_MARKETS.forEach(async (m) => {
       try {
-        if (typeof (oracleContract as any).getAttentionData === 'function') {
-          const report = await (oracleContract as any).getAttentionData(currentMarket.symbol);
-          if (report && report.isConfigured) {
-            setAttentionTelemetry({
-              sentimentScore: Number(report.sentimentScore),
-              socialVelocity: Number(report.socialVelocity),
-              newsMentions24h: Number(report.newsMentions24h),
-              lastUpdatedAt: Number(report.lastUpdatedAt),
-              enclaveType: 'AWS Nitro Enclave',
-              status: 'ATTESTED & SECURE',
-              provider: 'Chainlink CRE',
-              consensus: 'Workflow DON (BFT Consensus)',
-            });
-          }
-        }
-      } catch {
-        // use fallback telemetry
-      }
-
-      // 4. Fetch On-Chain Historical Reports
-      try {
-        if (typeof (oracleContract as any).getHistoricalReports === 'function') {
-          const rawHistory: any[] = await (oracleContract as any).getHistoricalReports(currentMarket.symbol, 50);
-          if (rawHistory && rawHistory.length > 0) {
-            const parsed: OnChainHistoricalReport[] = rawHistory.map((item: any) => ({
-              timestamp: Number(item.timestamp),
-              indexPrice: parseFloat(ethers.formatUnits(item.indexPrice, 18)),
-              sentimentScore: Number(item.sentimentScore),
-              socialVelocity: Number(item.socialVelocity),
-              newsMentions24h: Number(item.newsMentions24h),
-            }));
+        const rawHistory: any[] = await (oracleContract as any).getHistoricalReports(m.symbol, 50);
+        if (rawHistory && rawHistory.length > 0) {
+          const parsed: OnChainHistoricalReport[] = rawHistory.map((item: any) => ({
+            timestamp: Number(item.timestamp),
+            indexPrice: parseFloat(ethers.formatUnits(item.indexPrice, 18)),
+            sentimentScore: Number(item.sentimentScore),
+            socialVelocity: Number(item.socialVelocity),
+            newsMentions24h: Number(item.newsMentions24h),
+          }));
+          setAllMarketHistories((prev) => ({ ...prev, [m.id]: parsed }));
+          if (m.id === selectedMarket) {
             setHistoricalReports(parsed);
-            setAllMarketHistories((prev) => ({
-              ...prev,
-              [currentMarket.id]: parsed,
-            }));
           }
         }
-      } catch (historyErr) {
-        // preserve existing history
-      }
-
-      // 3. Fetch App Open Interest
-      if (appContract) {
-        try {
-          const [lOi, sOi] = await Promise.all([
-            appContract.totalLongOi().catch(() => BigInt(0)),
-            appContract.totalShortOi().catch(() => BigInt(0)),
-          ]);
-          setLongOi(lOi);
-          setShortOi(sOi);
-        } catch {
-          // ignore if app not deployed
-        }
-      }
-    } catch (err: any) {
-      console.warn('Could not read oracle price:', err);
-    } finally {
-      setIsOracleLoading(false);
-    }
-  }, [oracleContract, appContract, currentMarket]);
+      } catch {}
+    });
+  }, [oracleContract, selectedMarket]);
 
   // Poll on-chain stats every 4 seconds
   useEffect(() => {

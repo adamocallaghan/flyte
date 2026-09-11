@@ -48,7 +48,7 @@ export const KeeperConsole: React.FC = () => {
     ? account
     : (role === 'keeper' ? account || DEMO_ROLES.keeper.address : DEMO_ROLES.keeper.address);
   const isBrowserKeeper = role === 'browser' && !!account;
-  const keeperLabel = isBrowserKeeper ? shortenAddress(activeKeeper) : 'Ronald';
+  const keeperLabel = isBrowserKeeper ? shortenAddress(activeKeeper) : (activeKeeper ? shortenAddress(activeKeeper) : 'Keeper Bot');
 
   const [monitoredPositions, setMonitoredPositions] = useState<MonitoredPosition[]>([]);
   const [isScanning, setIsScanning] = useState<boolean>(false);
@@ -295,28 +295,7 @@ export const KeeperConsole: React.FC = () => {
     <div className="flex flex-col gap-6 font-headline">
 
 
-      {/* Active Keeper Status Bar */}
-      <div className="p-3.5 bg-[#FAFAFA] border-2 border-black flex flex-wrap justify-between items-center text-xs font-mono gap-3 shadow-[2px_2px_0px_0px_#000000]">
-        <div className="flex items-center gap-2">
-          <span className="text-gray-500 uppercase font-bold">Active Keeper:</span>
-          <span className="font-bold text-black">{shortenAddress(activeKeeper)}</span>
-          {isBrowserKeeper ? (
-            <span className="bg-[#00E5FF] text-black font-bold px-1.5 py-0.5 border border-black text-[10px]">
-              🦊 Injected MetaMask
-            </span>
-          ) : (
-            <span className="bg-[#FFE600] text-black font-bold px-1.5 py-0.5 border border-black text-[10px]">
-              Demo Ronald
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-gray-500 uppercase font-bold">1% Liquidation Bounty:</span>
-          <span className="font-black text-[#006d32]">
-            {isBrowserKeeper ? `Direct to Your Wallet (${shortenAddress(activeKeeper)})` : 'Sent to Ronald (0x90F7...)'}
-          </span>
-        </div>
-      </div>
+
 
       {/* TOP: Keeper Metrics Bar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

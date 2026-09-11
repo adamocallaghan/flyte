@@ -235,9 +235,7 @@ export const MarketStatsBar: React.FC = () => {
                   Chainlink CRE TEE Oracle
                 </span>
               </div>
-              <span className="bg-black text-[#FFE600] font-mono text-[9px] px-1.5 py-0.5 font-bold uppercase">
-                {attentionTelemetry.enclaveType.includes('Nitro') ? 'NITRO ATTESTED' : 'TEE SECURE'}
-              </span>
+
             </div>
 
             <div className="grid grid-cols-3 gap-3 border-t border-black/20 pt-1.5 font-mono">
