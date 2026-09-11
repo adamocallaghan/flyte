@@ -8,9 +8,10 @@ import { PositionsManager } from '../components/PositionsManager';
 import { LPConsole } from '../components/LPConsole';
 import { KeeperConsole } from '../components/KeeperConsole';
 import { SharedCoverage } from '../components/SharedCoverage';
+import { OracleConsole } from '../components/OracleConsole';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'trade' | 'lp' | 'keeper' | 'coverage'>('trade');
+  const [activeTab, setActiveTab] = useState<'trade' | 'lp' | 'keeper' | 'coverage' | 'oracles'>('trade');
 
 
 
@@ -53,6 +54,12 @@ export default function Home() {
           {activeTab === 'coverage' && (
             <section className="flex flex-col gap-6">
               <SharedCoverage />
+            </section>
+          )}
+
+          {activeTab === 'oracles' && (
+            <section className="flex flex-col gap-6">
+              <OracleConsole />
             </section>
           )}
         </div>

@@ -15,8 +15,8 @@ import {
 } from '../config/contracts';
 
 interface HeaderProps {
-  activeTab: 'trade' | 'lp' | 'keeper' | 'coverage';
-  onTabChange: (tab: 'trade' | 'lp' | 'keeper' | 'coverage') => void;
+  activeTab: 'trade' | 'lp' | 'keeper' | 'coverage' | 'oracles';
+  onTabChange: (tab: 'trade' | 'lp' | 'keeper' | 'coverage' | 'oracles') => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
@@ -382,6 +382,18 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                 }`}
               >
                 🛡️ COVERAGE
+              </button>
+              <button
+                type="button"
+                id="nav-tab-oracles"
+                onClick={() => onTabChange('oracles')}
+                className={`h-full flex items-center px-5 md:px-7 uppercase text-xs font-bold border-r-2 border-black cursor-pointer transition-none ${
+                  activeTab === 'oracles'
+                    ? 'bg-[#00E5FF] text-black border-b-2 border-b-[#00E5FF]'
+                    : 'text-black hover:bg-neutral-200'
+                }`}
+              >
+                🔮 ORACLES
               </button>
             </nav>
 
