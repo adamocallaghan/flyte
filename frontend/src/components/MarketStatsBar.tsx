@@ -56,7 +56,7 @@ export const MarketStatsBar: React.FC = () => {
   const displayPrice = btcPrice || currentMarket.basePrice;
 
   return (
-    <div className="w-full mb-6 font-headline">
+    <div className="w-full font-headline">
       {/* TOP MARKET STATS CARD */}
       <div className="w-full bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] p-4 md:p-6 flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-6">
         {/* Left: Interactive Market Dropdown Selector & Mark Price */}

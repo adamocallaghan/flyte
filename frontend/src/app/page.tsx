@@ -26,7 +26,7 @@ export default function Home() {
       />
 
       {/* Main Content Cockpit Area */}
-      <main className="w-full pt-28 pb-12 bg-[#f4f4f4] flex-1">
+      <main className="w-full pt-[136px] pb-12 bg-[#f4f4f4] flex-1">
         <div className="w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Tab Views */}
           {activeTab === 'trade' && (

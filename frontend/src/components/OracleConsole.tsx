@@ -129,7 +129,7 @@ export const OracleConsole: React.FC = () => {
         <div className="bg-white border-2 border-black shadow-[3px_3px_0px_0px_#000000] p-4 flex flex-col justify-between">
           <div className="flex justify-between items-center text-gray-500 font-mono text-xs">
             <span className="font-bold uppercase text-black">MARKET SENTIMENT</span>
-            <span className="bg-[#FFE600] text-black font-bold px-1.5 py-0.5 border border-black text-[10px]">
+            <span className="bg-[#00F076] text-black font-bold px-1.5 py-0.5 border border-black text-[10px]">
               SENTIMENT ANALYSIS
             </span>
           </div>
