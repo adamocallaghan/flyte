@@ -1,23 +1,40 @@
 {
-  "schedule": "*/5 * * * *",
+  "schedule": "0 * * * *",
   "markets": [
     {
       "id": "ROBOTS",
       "name": "Humanoid Robots",
-      "keywords": ["humanoid robot", "optimus", "figure 02", "boston dynamics", "unitree"],
-      "baseIndex": 75.50
+      "keywords": [
+        "humanoid robot",
+        "optimus",
+        "figure 02",
+        "boston dynamics",
+        "unitree"
+      ],
+      "baseIndex": 75.5
     },
     {
       "id": "GTA6",
       "name": "Grand Theft Auto VI",
-      "keywords": ["gta 6", "gta vi", "grand theft auto vi", "rockstar games", "trailer 2"],
-      "baseIndex": 42.10
+      "keywords": [
+        "gta 6",
+        "gta vi",
+        "grand theft auto vi",
+        "rockstar games",
+        "trailer 2"
+      ],
+      "baseIndex": 42.1
     },
     {
       "id": "DEEPSEEK",
       "name": "DeepSeek AI",
-      "keywords": ["deepseek", "deepseek r1", "v3", "open-source reasoning"],
-      "baseIndex": 88.40
+      "keywords": [
+        "deepseek",
+        "deepseek r1",
+        "v3",
+        "open-source reasoning"
+      ],
+      "baseIndex": 88.4
     }
   ]
 }
