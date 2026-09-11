@@ -187,6 +187,21 @@ export const MarketStatsBar: React.FC = () => {
 
           <div>
             <span className="block font-mono text-[11px] text-gray-500 uppercase">
+              Aave Yield (aUSDC)
+            </span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="font-mono text-sm font-extrabold text-[#006875]">
+                +3,504% APY
+              </span>
+              <span className="bg-[#006875] text-white font-mono text-[9px] px-1 py-0.2 font-bold uppercase">
+                REBASING
+              </span>
+            </div>
+            <span className="text-[10px] text-gray-400 font-mono">+1.0% every 15m</span>
+          </div>
+
+          <div>
+            <span className="block font-mono text-[11px] text-gray-500 uppercase">
               Margin Liquidity
             </span>
             <span className="font-mono text-sm font-bold text-black mt-0.5 block">

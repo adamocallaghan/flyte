@@ -71,12 +71,12 @@ export const LPConsole: React.FC = () => {
   const [dockingHash, setDockingHash] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
-  // Aave v3 Yield Calculation (4.25% APY)
-  const apy = 4.25;
-  const lpBalance = parseFloat(balances.aUsdc) > 0 ? parseFloat(balances.aUsdc) : 50000;
+  // Aave Continuous Yield Calculation (1% per 15 minutes / ~3,504% APY)
+  const apy = 3504;
+  const lpBalance = parseFloat(balances.aUsdc) > 0 ? parseFloat(balances.aUsdc) : 5000;
   const annualInterest = (lpBalance * apy) / 100;
-  const monthlyInterest = annualInterest / 12;
-  const dailyInterest = annualInterest / 365;
+  const dailyInterest = lpBalance * 0.3504;
+  const intervalYield = lpBalance * 0.01;
 
   // Real-time ticking interest counter (adds simulated micro-yield)
   const [accruedYield, setAccruedYield] = useState<number>(12.458);
@@ -533,7 +533,7 @@ export const LPConsole: React.FC = () => {
                 Aave v3 Yield
               </span>
               <span className="bg-[#00F076] border-2 border-black font-mono text-[10px] font-bold px-2 py-0.5 text-black uppercase shadow-[1px_1px_0px_0px_#000000]">
-                {apy}% APY
+                +3,504% APY (1%/15m)
               </span>
             </div>
 
@@ -547,19 +547,19 @@ export const LPConsole: React.FC = () => {
 
           <div className="flex flex-col gap-2 pt-3 border-t-2 border-black">
             <div className="bg-[#FAFAFA] border-2 border-black p-2.5 flex justify-between items-center shadow-[1px_1px_0px_0px_#000000]">
-              <span className="font-mono text-[10px] text-gray-500 uppercase font-bold">Daily</span>
+              <span className="font-mono text-[10px] text-gray-500 uppercase font-bold">15-Min Accrual</span>
+              <span className="font-mono font-black text-xs text-[#006d32]">
+                +${intervalYield.toFixed(2)}
+              </span>
+            </div>
+            <div className="bg-[#FAFAFA] border-2 border-black p-2.5 flex justify-between items-center shadow-[1px_1px_0px_0px_#000000]">
+              <span className="font-mono text-[10px] text-gray-500 uppercase font-bold">Daily (35%)</span>
               <span className="font-mono font-black text-xs text-black">
                 +${dailyInterest.toFixed(2)}
               </span>
             </div>
             <div className="bg-[#FAFAFA] border-2 border-black p-2.5 flex justify-between items-center shadow-[1px_1px_0px_0px_#000000]">
-              <span className="font-mono text-[10px] text-gray-500 uppercase font-bold">Monthly</span>
-              <span className="font-mono font-black text-xs text-black">
-                +${monthlyInterest.toFixed(2)}
-              </span>
-            </div>
-            <div className="bg-[#FAFAFA] border-2 border-black p-2.5 flex justify-between items-center shadow-[1px_1px_0px_0px_#000000]">
-              <span className="font-mono text-[10px] text-gray-500 uppercase font-bold">Annual</span>
+              <span className="font-mono text-[10px] text-gray-500 uppercase font-bold">Annualized</span>
               <span className="font-mono font-black text-xs text-black">
                 +${annualInterest.toFixed(2)}
               </span>

@@ -35,6 +35,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
     connectBrowserWallet,
     switchOrAddAnvilNetwork,
     refreshBalances,
+    aUsdcContract,
+    signer,
   } = useWeb3();
 
   const {
@@ -86,45 +88,62 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
     }
   };
 
-  // Quick Anvil Cheatcode: Direct Mint 5k aUSDC to Active Account via Aave v3 supply
+  // Public Faucet / Mint 5,000 aUSDC to Active Account
   const handleFaucetAUSDC = async () => {
     if (!account) return;
     setIsFauceting(true);
     try {
-      if (isFork) {
-        const anvilProv = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
-        const amount = ethers.parseUnits('5000', 6);
-        const GMX_VAULT = '0x489ee077994B6658eAfA855C308275EAd8097C4A';
+      let mintedOnChain = false;
 
-        // 1. Impersonate high-liquidity USDC vault on Arbitrum fork
-        await anvilProv.send('anvil_impersonateAccount', [GMX_VAULT]);
-        await anvilProv.send('anvil_setBalance', [GMX_VAULT, '0x8AC7230489E80000']);
+      // 1. First try calling on-chain faucet() on the active aUSDC contract directly
+      if (aUsdcContract && signer) {
+        try {
+          const connectedContract = aUsdcContract.connect(signer) as ethers.Contract;
+          const tx = await (connectedContract as any).faucet();
+          await tx.wait();
+          mintedOnChain = true;
+          await refreshBalances();
+          setCheatcodeStatus('✅ 5,000 aUSDC minted directly to your wallet!');
+        } catch (faucetErr: any) {
+          console.log('Direct faucet() call was not handled or reverted, evaluating fork fallback:', faucetErr);
+        }
+      }
 
-        const vaultSigner = await anvilProv.getSigner(GMX_VAULT);
-        const usdc = new ethers.Contract(
-          USDC_ADDRESS,
-          ['function approve(address spender, uint256 amount) returns (bool)'],
-          vaultSigner
-        );
-        const aavePool = new ethers.Contract(
-          AAVE_POOL_ADDRESS,
-          ['function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode)'],
-          vaultSigner
-        );
+      // 2. Fallback to Anvil fork impersonation if direct faucet is not available
+      if (!mintedOnChain) {
+        if (isFork) {
+          const anvilProv = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
+          const amount = ethers.parseUnits('5000', 6);
+          const GMX_VAULT = '0x489ee077994B6658eAfA855C308275EAd8097C4A';
 
-        // 2. Approve Aave Pool and supply USDC on behalf of the active account
-        const appTx = await usdc.approve(AAVE_POOL_ADDRESS, amount);
-        await appTx.wait();
+          await anvilProv.send('anvil_impersonateAccount', [GMX_VAULT]);
+          await anvilProv.send('anvil_setBalance', [GMX_VAULT, '0x8AC7230489E80000']);
 
-        const supplyTx = await aavePool.supply(USDC_ADDRESS, amount, account, 0);
-        await supplyTx.wait();
+          const vaultSigner = await anvilProv.getSigner(GMX_VAULT);
+          const usdc = new ethers.Contract(
+            USDC_ADDRESS,
+            ['function approve(address spender, uint256 amount) returns (bool)'],
+            vaultSigner
+          );
+          const aavePool = new ethers.Contract(
+            AAVE_POOL_ADDRESS,
+            ['function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode)'],
+            vaultSigner
+          );
 
-        await anvilProv.send('anvil_stopImpersonatingAccount', [GMX_VAULT]);
+          const appTx = await usdc.approve(AAVE_POOL_ADDRESS, amount);
+          await appTx.wait();
 
-        await refreshBalances();
-        setCheatcodeStatus('✅ 5,000 aUSDC minted directly to your wallet!');
-      } else {
-        setCheatcodeStatus('Cheatcodes only active on local Anvil fork');
+          const supplyTx = await aavePool.supply(USDC_ADDRESS, amount, account, 0);
+          await supplyTx.wait();
+
+          await anvilProv.send('anvil_stopImpersonatingAccount', [GMX_VAULT]);
+
+          await refreshBalances();
+          setCheatcodeStatus('✅ 5,000 aUSDC minted via Aave v3 supply!');
+        } else {
+          setCheatcodeStatus('❌ Faucet unavailable for this token on current network');
+        }
       }
     } catch (e: any) {
       console.warn('Faucet aUSDC failed:', e);

@@ -19,6 +19,7 @@ import {
   MOCK_PRICE_ORACLE_ABI,
   AQUA_ABI,
   ERC20_ABI,
+  MOCK_AAVE_YIELD_TOKEN_ABI,
 } from '../config/contracts';
 
 export type UserRole = 'trader' | 'lp' | 'keeper' | 'browser';
@@ -238,7 +239,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
 
     const aqua = new ethers.Contract(AQUA_REGISTRY_ADDRESS, AQUA_ABI, runner);
     const usdc = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, runner);
-    const aUsdc = new ethers.Contract(A_USDC_ADDRESS, ERC20_ABI, runner);
+    const aUsdc = new ethers.Contract(A_USDC_ADDRESS, MOCK_AAVE_YIELD_TOKEN_ABI, runner);
 
     return { app, aqua, oracle, usdc, aUsdc };
   }, [provider, signer, appAddress, oracleAddress]);
