@@ -107,9 +107,9 @@ export const OracleConsole: React.FC = () => {
         {/* Card 1: Active Mark Price */}
         <div className="bg-white border-2 border-black shadow-[3px_3px_0px_0px_#000000] p-4 flex flex-col justify-between">
           <div className="flex justify-between items-center text-gray-500 font-mono text-xs">
-            <span className="font-bold uppercase">{currentMarket.symbol} MARK PRICE</span>
+            <span className="font-bold uppercase text-black">{currentMarket.symbol} MARK PRICE</span>
             <span className="bg-[#00E5FF] text-black font-bold px-1.5 py-0.5 border border-black text-[10px]">
-              ON-CHAIN
+              SETTLEMENT PRICE
             </span>
           </div>
           <div className="my-2">
@@ -125,12 +125,12 @@ export const OracleConsole: React.FC = () => {
           </span>
         </div>
 
-        {/* Card 2: Enclave Sentiment Score */}
+        {/* Card 2: Market Sentiment */}
         <div className="bg-white border-2 border-black shadow-[3px_3px_0px_0px_#000000] p-4 flex flex-col justify-between">
           <div className="flex justify-between items-center text-gray-500 font-mono text-xs">
-            <span className="font-bold uppercase">LLM SENTIMENT SYNTHESIS</span>
-            <span className="bg-black text-[#FFE600] font-bold px-1.5 py-0.5 text-[10px]">
-              OPENROUTER
+            <span className="font-bold uppercase text-black">MARKET SENTIMENT</span>
+            <span className="bg-[#FFE600] text-black font-bold px-1.5 py-0.5 border border-black text-[10px]">
+              SENTIMENT ANALYSIS
             </span>
           </div>
           <div className="my-2">
@@ -152,9 +152,9 @@ export const OracleConsole: React.FC = () => {
         {/* Card 3: Social & Search Velocity */}
         <div className="bg-white border-2 border-black shadow-[3px_3px_0px_0px_#000000] p-4 flex flex-col justify-between">
           <div className="flex justify-between items-center text-gray-500 font-mono text-xs">
-            <span className="font-bold uppercase">SEARCH &amp; NEWS VELOCITY</span>
+            <span className="font-bold uppercase text-black">SEARCH &amp; NEWS VELOCITY</span>
             <span className="bg-[#FFE600] text-black font-bold px-1.5 py-0.5 border border-black text-[10px]">
-              FIRECRAWL
+              TREND MOMENTUM
             </span>
           </div>
           <div className="my-2">
@@ -176,9 +176,9 @@ export const OracleConsole: React.FC = () => {
         {/* Card 4: Ground Truth Attention Oracle */}
         <div className="bg-white border-2 border-black shadow-[3px_3px_0px_0px_#000000] p-4 flex flex-col justify-between">
           <div className="flex justify-between items-center text-gray-500 font-mono text-xs">
-            <span className="font-bold uppercase">GROUND TRUTH ATTENTION ORACLE</span>
+            <span className="font-bold uppercase text-black">GROUND TRUTH ATTENTION ORACLE</span>
             <span className="bg-[#00F076] text-black font-bold px-1.5 py-0.5 border border-black text-[10px]">
-              ● NITRO ATTESTED
+              ● TEE CONSENSUS
             </span>
           </div>
           <div className="my-2">
@@ -186,7 +186,7 @@ export const OracleConsole: React.FC = () => {
               CRE TEE v1.20
             </span>
             <span className="font-mono text-xs font-bold text-[#006875] block mt-0.5">
-              AWS Nitro Enclaves
+              Chainlink CRE Enclave DON
             </span>
           </div>
           <span className="text-[10px] font-mono text-gray-400 border-t border-gray-200 pt-2 block">
@@ -449,7 +449,7 @@ export const OracleConsole: React.FC = () => {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <span className="bg-[#00E5FF] text-black font-extrabold px-2 py-0.5 border border-black text-[10px]">
-                        TEE NITRO VERIFIED
+                        TEE CONSENSUS VERIFIED
                       </span>
                     </td>
                   </tr>

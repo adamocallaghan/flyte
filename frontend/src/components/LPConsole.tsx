@@ -42,11 +42,9 @@ export const LPConsole: React.FC = () => {
     refreshBalances,
   } = useWeb3();
 
-  // Active maker address: injected MetaMask when connected as browser, else Grimace
-  const activeMaker = (role === 'browser' && account)
-    ? account
-    : (role === 'lp' ? account || DEMO_ROLES.lp.address : DEMO_ROLES.lp.address);
-  const isBrowserMaker = role === 'browser' && !!account;
+  // Active maker address: connected browser wallet in production, or Anvil demo role on local fork
+  const activeMaker = account || (isFork ? DEMO_ROLES.lp.address : '');
+  const isBrowserMaker = !!account;
 
   // Quote Shipper Form State
   const [maxNotionalInput, setMaxNotionalInput] = useState<string>('50000');
@@ -400,14 +398,10 @@ export const LPConsole: React.FC = () => {
         <div className="mb-5 p-3.5 bg-[#FAFAFA] border-2 border-black flex flex-wrap justify-between items-center text-xs font-mono gap-3 shadow-[2px_2px_0px_0px_#000000]">
           <div className="flex items-center gap-2">
             <span className="text-gray-500 uppercase font-bold">Maker Wallet:</span>
-            <span className="font-bold text-black">{shortenAddress(activeMaker)}</span>
-            {isBrowserMaker ? (
+            <span className="font-bold text-black">{activeMaker ? shortenAddress(activeMaker) : 'Not Connected'}</span>
+            {account && (
               <span className="bg-[#00E5FF] text-black font-bold px-1.5 py-0.5 border border-black text-[10px]">
-                🦊 Injected MetaMask
-              </span>
-            ) : (
-              <span className="bg-[#FFE600] text-black font-bold px-1.5 py-0.5 border border-black text-[10px]">
-                Demo Grimace
+                🦊 Connected
               </span>
             )}
           </div>
