@@ -49,6 +49,7 @@ export const SharedCoverage: React.FC = () => {
     provider,
     account,
     chainId,
+    balances,
   } = useWeb3();
 
   const cacheKey = `flyte_aqua_quotes_${(appAddress || DEFAULT_PERP_APP_ADDRESS).toLowerCase()}`;
@@ -75,8 +76,8 @@ export const SharedCoverage: React.FC = () => {
               strategyHash: q.strategyHash,
               maker: q.maker,
               maxNotional: q.maxNotional,
-              walletBalance: q.currentBalance || q.maxNotional,
-              allowance: 1000000,
+              walletBalance: 0,
+              allowance: 0,
               coverageRatio: 100,
               status: 'covered' as const,
               maxLeverage: q.maxLeverage,
@@ -106,6 +107,48 @@ export const SharedCoverage: React.FC = () => {
       let activeStrategies: StrategyCoverage[] = [];
       const makerBalanceMap = new Map<string, number>();
       const makerAllowanceMap = new Map<string, number>();
+
+      // Helper to fetch live on-chain maker reserves (real wallet balance and Aqua allowance)
+      const fetchMakerReserves = async (makerAddr: string) => {
+        const lower = makerAddr.toLowerCase();
+        if (makerBalanceMap.has(lower)) {
+          return {
+            balance: makerBalanceMap.get(lower) || 0,
+            allowance: makerAllowanceMap.get(lower) || 0,
+          };
+        }
+
+        let balance = 0;
+        let allowance = 0;
+
+        // If the maker is the connected user, use their live wallet balance as primary
+        if (account && lower === account.toLowerCase()) {
+          const userBal = parseFloat(balances.aUsdc);
+          if (userBal > 0) balance = userBal;
+          const userAllow = parseFloat(ethers.formatUnits(balances.aUsdcAllowanceAqua, 6));
+          if (userAllow > 0) allowance = userAllow;
+        }
+
+        // Query directly on-chain from aUsdcContract
+        if (aUsdcContract && ethers.isAddress(makerAddr)) {
+          try {
+            const [bRaw, aRaw] = await Promise.all([
+              aUsdcContract.balanceOf(makerAddr).catch(() => BigInt(0)),
+              aUsdcContract.allowance(makerAddr, AQUA_REGISTRY_ADDRESS).catch(() => BigInt(0)),
+            ]);
+            const onChainBal = parseFloat(ethers.formatUnits(bRaw, 6));
+            const onChainAllow = parseFloat(ethers.formatUnits(aRaw, 6));
+            if (onChainBal > 0 || balance === 0) balance = onChainBal;
+            if (onChainAllow > 0 || allowance === 0) allowance = onChainAllow;
+          } catch (err) {
+            console.warn('Could not fetch on-chain aUSDC balance for maker:', makerAddr, err);
+          }
+        }
+
+        makerBalanceMap.set(lower, balance);
+        makerAllowanceMap.set(lower, allowance);
+        return { balance, allowance };
+      };
 
       if (aquaContract && aUsdcContract) {
         try {
@@ -151,23 +194,7 @@ export const SharedCoverage: React.FC = () => {
                 }
               } catch {}
 
-              // Fetch live on-chain balance and allowance for maker
-              if (!makerBalanceMap.has(makerAddr)) {
-                try {
-                  const [bRaw, aRaw] = await Promise.all([
-                    aUsdcContract.balanceOf(makerAddr).catch(() => BigInt(0)),
-                    aUsdcContract.allowance(makerAddr, AQUA_REGISTRY_ADDRESS).catch(() => BigInt(0)),
-                  ]);
-                  makerBalanceMap.set(makerAddr, parseFloat(ethers.formatUnits(bRaw, 6)));
-                  makerAllowanceMap.set(makerAddr, parseFloat(ethers.formatUnits(aRaw, 6)));
-                } catch {
-                  makerBalanceMap.set(makerAddr, 5000);
-                  makerAllowanceMap.set(makerAddr, 1000000);
-                }
-              }
-
-              const balance = makerBalanceMap.get(makerAddr) || 0;
-              const allowance = makerAllowanceMap.get(makerAddr) || 0;
+              const { balance, allowance } = await fetchMakerReserves(makerAddr);
 
               // Compute coverage ratio: (Actual Wallet Balance / Promised Cap) * 100
               const ratio = maxNotional > 0 ? (balance / maxNotional) * 100 : 100;
@@ -197,8 +224,7 @@ export const SharedCoverage: React.FC = () => {
             if (q.status === 'docked' || dockedHashes.has(q.strategyHash.toLowerCase())) continue;
             if (!quoteMap.has(q.strategyHash.toLowerCase())) {
               const makerAddr = q.maker.toLowerCase();
-              const balance = makerBalanceMap.get(makerAddr) || q.currentBalance || q.maxNotional;
-              const allowance = makerAllowanceMap.get(makerAddr) || 1000000;
+              const { balance, allowance } = await fetchMakerReserves(makerAddr);
               const ratio = q.maxNotional > 0 ? (balance / q.maxNotional) * 100 : 100;
               const status: 'covered' | 'partial' | 'insufficient' =
                 ratio >= 99 ? 'covered' : ratio > 0 ? 'partial' : 'insufficient';
@@ -227,21 +253,26 @@ export const SharedCoverage: React.FC = () => {
       if (activeStrategies.length > 0) {
         setStrategies(activeStrategies);
       } else {
-        const cachedFallback = getCachedQuotes()
-          .filter((q: any) => q.status !== 'docked')
-          .map((q: any) => ({
-            strategyHash: q.strategyHash,
-            maker: q.maker,
-            maxNotional: q.maxNotional,
-            walletBalance: q.currentBalance || q.maxNotional,
-            allowance: 1000000,
-            coverageRatio: 100,
-            status: 'covered' as const,
-            maxLeverage: q.maxLeverage,
-            spreadBps: q.spreadBps,
-            sideMask: q.sideMask,
-          }));
-        if (cachedFallback.length > 0) {
+        const cachedQuotes = getCachedQuotes().filter((q: any) => q.status !== 'docked');
+        if (cachedQuotes.length > 0) {
+          const cachedFallback = await Promise.all(
+            cachedQuotes.map(async (q: any) => {
+              const { balance, allowance } = await fetchMakerReserves(q.maker);
+              const ratio = q.maxNotional > 0 ? (balance / q.maxNotional) * 100 : 100;
+              return {
+                strategyHash: q.strategyHash,
+                maker: q.maker,
+                maxNotional: q.maxNotional,
+                walletBalance: balance,
+                allowance,
+                coverageRatio: ratio,
+                status: ratio >= 99 ? ('covered' as const) : ratio > 0 ? ('partial' as const) : ('insufficient' as const),
+                maxLeverage: q.maxLeverage,
+                spreadBps: q.spreadBps,
+                sideMask: q.sideMask,
+              };
+            })
+          );
           setStrategies(cachedFallback);
         }
       }
@@ -353,7 +384,7 @@ export const SharedCoverage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [provider, appAddress, chainId, aquaContract, aUsdcContract, appContract, getCachedQuotes]);
+  }, [provider, appAddress, chainId, aquaContract, aUsdcContract, appContract, getCachedQuotes, account, balances.aUsdc, balances.aUsdcAllowanceAqua]);
 
   useEffect(() => {
     loadCoverageData();
