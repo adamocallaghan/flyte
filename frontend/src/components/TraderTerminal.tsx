@@ -15,6 +15,7 @@ import {
   DEMO_ROLES,
   formatUsd,
   shortenAddress,
+  DEFAULT_PERP_APP_ADDRESS,
   queryFilterInChunks,
   getEventStartBlock,
 } from '../config/contracts';
@@ -64,9 +65,76 @@ export const TraderTerminal: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [orderStatus, setOrderStatus] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
-  // Live Aqua strategies state
-  const [activeQuotes, setActiveQuotes] = useState<ActiveAquaQuote[]>([]);
-  const [isLoadingQuotes, setIsLoadingQuotes] = useState<boolean>(true);
+  const cacheKey = `flyte_aqua_quotes_${(appAddress || DEFAULT_PERP_APP_ADDRESS).toLowerCase()}`;
+
+  const getCachedQuotes = useCallback((): ActiveAquaQuote[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem(cacheKey);
+      if (saved) {
+        const quotes: any[] = JSON.parse(saved);
+        return quotes
+          .filter((q: any) => q.status !== 'docked')
+          .map((q: any) => ({
+            strategyHash: q.strategyHash,
+            maker: q.maker,
+            collateralToken: q.collateralToken || A_USDC_ADDRESS,
+            maxNotional: q.maxNotional,
+            currentBalance: q.currentBalance || q.maxNotional,
+            maxLeverage: q.maxLeverage,
+            spreadBps: q.spreadBps,
+            sideMask: q.sideMask,
+            quoteExpiry: q.quoteExpiry || 0,
+            rawStrategy: q.rawStrategy || {
+              lp: q.maker,
+              collateralToken: q.collateralToken || A_USDC_ADDRESS,
+              maxNotional: ethers.parseUnits(q.maxNotional.toFixed(6), 6),
+              maxLeverage: BigInt(q.maxLeverage),
+              spreadBps: BigInt(q.spreadBps),
+              sideMask: q.sideMask,
+              quoteExpiry: BigInt(q.quoteExpiry || 0),
+            },
+          }));
+      }
+    } catch {}
+    return [];
+  }, [cacheKey]);
+
+  // Live Aqua strategies state with instant localStorage synchronization
+  const [activeQuotes, setActiveQuotes] = useState<ActiveAquaQuote[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(`flyte_aqua_quotes_${DEFAULT_PERP_APP_ADDRESS.toLowerCase()}`);
+        if (saved) {
+          const quotes: any[] = JSON.parse(saved);
+          return quotes
+            .filter((q: any) => q.status !== 'docked')
+            .map((q: any) => ({
+              strategyHash: q.strategyHash,
+              maker: q.maker,
+              collateralToken: q.collateralToken || A_USDC_ADDRESS,
+              maxNotional: q.maxNotional,
+              currentBalance: q.currentBalance || q.maxNotional,
+              maxLeverage: q.maxLeverage,
+              spreadBps: q.spreadBps,
+              sideMask: q.sideMask,
+              quoteExpiry: q.quoteExpiry || 0,
+              rawStrategy: q.rawStrategy || {
+                lp: q.maker,
+                collateralToken: q.collateralToken || A_USDC_ADDRESS,
+                maxNotional: ethers.parseUnits(q.maxNotional.toFixed(6), 6),
+                maxLeverage: BigInt(q.maxLeverage),
+                spreadBps: BigInt(q.spreadBps),
+                sideMask: q.sideMask,
+                quoteExpiry: BigInt(q.quoteExpiry || 0),
+              },
+            }));
+        }
+      } catch {}
+    }
+    return [];
+  });
+  const [isLoadingQuotes, setIsLoadingQuotes] = useState<boolean>(false);
 
   // Load live on-chain Shipped quotes from 1inch Aqua
   const loadQuotes = useCallback(async () => {
@@ -113,46 +181,80 @@ export const TraderTerminal: React.FC = () => {
 
           if (dockedHashes.has(strategyHash.toLowerCase())) continue;
 
-          let currentBalance = 0;
+          let currentBalance = maxNotional;
           try {
             const [bal] = await (aquaContract as any).rawBalances(maker, appAddress, strategyHash, collateralToken);
-            currentBalance = parseFloat(ethers.formatUnits(bal, 6));
+            const parsedBal = parseFloat(ethers.formatUnits(bal, 6));
+            if (parsedBal === 0) {
+              continue; // Strategy is depleted / docked
+            }
+            if (parsedBal > 0) {
+              currentBalance = parsedBal;
+            }
           } catch {}
 
-          if (currentBalance > 0) {
-            quoteMap.set(strategyHash.toLowerCase(), {
-              strategyHash,
-              maker,
+          quoteMap.set(strategyHash.toLowerCase(), {
+            strategyHash,
+            maker,
+            collateralToken,
+            maxNotional,
+            currentBalance,
+            maxLeverage,
+            spreadBps,
+            sideMask,
+            quoteExpiry,
+            rawStrategy: {
+              lp: maker,
               collateralToken,
-              maxNotional,
-              currentBalance,
-              maxLeverage,
-              spreadBps,
+              maxNotional: maxNotionalRaw,
+              maxLeverage: BigInt(maxLeverage),
+              spreadBps: BigInt(spreadBps),
               sideMask,
-              quoteExpiry,
-              rawStrategy: {
-                lp: maker,
-                collateralToken,
-                maxNotional: maxNotionalRaw,
-                maxLeverage: BigInt(maxLeverage),
-                spreadBps: BigInt(spreadBps),
-                sideMask,
-                quoteExpiry: BigInt(quoteExpiry),
-              },
-            });
-          }
+              quoteExpiry: BigInt(quoteExpiry),
+            },
+          });
         } catch (e) {
           console.warn('Failed to parse Aqua quote in TraderTerminal:', e);
         }
       }
 
-      setActiveQuotes(Array.from(quoteMap.values()));
+      // Merge with active quotes from Liquidity cache
+      const cached = getCachedQuotes();
+      for (const q of cached) {
+        if (dockedHashes.has(q.strategyHash.toLowerCase())) continue;
+        if (!quoteMap.has(q.strategyHash.toLowerCase())) {
+          let bal = q.currentBalance || q.maxNotional;
+          try {
+            const [b] = await (aquaContract as any).rawBalances(q.maker, appAddress, q.strategyHash, q.collateralToken);
+            const parsed = parseFloat(ethers.formatUnits(b, 6));
+            if (parsed === 0) continue;
+            if (parsed > 0) bal = parsed;
+          } catch {}
+          quoteMap.set(q.strategyHash.toLowerCase(), {
+            ...q,
+            currentBalance: bal,
+          });
+        }
+      }
+
+      if (quoteMap.size > 0) {
+        setActiveQuotes(Array.from(quoteMap.values()));
+      } else {
+        const fallback = getCachedQuotes().filter((q) => !dockedHashes.has(q.strategyHash.toLowerCase()));
+        if (fallback.length > 0) {
+          setActiveQuotes(fallback);
+        }
+      }
     } catch (err) {
       console.warn('Could not load Aqua quotes in TraderTerminal:', err);
+      const fallback = getCachedQuotes();
+      if (fallback.length > 0) {
+        setActiveQuotes(fallback);
+      }
     } finally {
       setIsLoadingQuotes(false);
     }
-  }, [aquaContract, provider, appAddress, chainId]);
+  }, [aquaContract, provider, appAddress, chainId, getCachedQuotes]);
 
   useEffect(() => {
     loadQuotes();
