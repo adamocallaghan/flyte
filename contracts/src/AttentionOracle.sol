@@ -20,6 +20,14 @@ contract AttentionOracle is IPriceOracle {
         bool isConfigured;
     }
 
+    struct HistoricalReport {
+        uint256 timestamp;
+        uint256 indexPrice;      // 1e18-scaled USD price
+        int256 sentimentScore;   // scaled x100
+        uint256 socialVelocity;  // 0 - 100 velocity score
+        uint256 newsMentions24h; // 24-hour media & news count
+    }
+
     // --- STATE VARIABLES ---
 
     address public owner;
@@ -32,6 +40,9 @@ contract AttentionOracle is IPriceOracle {
     mapping(string => AttentionData) public attentionMarkets;
     mapping(string => address) public marketToAsset;
     mapping(address => string) public assetToMarket;
+
+    // Market identifier -> Chronological on-chain array of historical reads
+    mapping(string => HistoricalReport[]) public marketHistory;
 
     string[] public registeredMarketIds;
 
@@ -49,6 +60,7 @@ contract AttentionOracle is IPriceOracle {
     event MarketRegistered(string indexed marketId, string name, address indexed assetAddress, uint256 initialPrice);
     event ReporterUpdated(address indexed reporter, bool isAuthorized);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event HistoricalReportsSeeded(string indexed marketId, uint256 count);
 
     // --- ERRORS ---
 
@@ -119,6 +131,15 @@ contract AttentionOracle is IPriceOracle {
         assetToMarket[assetAddress] = marketId;
         prices[assetAddress] = initialPrice;
 
+        // Record initial baseline point in history
+        marketHistory[marketId].push(HistoricalReport({
+            timestamp: block.timestamp,
+            indexPrice: initialPrice,
+            sentimentScore: 50,
+            socialVelocity: 70,
+            newsMentions24h: 50000
+        }));
+
         emit MarketRegistered(marketId, name, assetAddress, initialPrice);
         emit PriceUpdated(assetAddress, initialPrice);
     }
@@ -148,6 +169,15 @@ contract AttentionOracle is IPriceOracle {
             prices[asset] = newPrice;
             emit PriceUpdated(asset, newPrice);
         }
+
+        // Append historical snapshot
+        marketHistory[marketId].push(HistoricalReport({
+            timestamp: block.timestamp,
+            indexPrice: newPrice,
+            sentimentScore: sentimentScore,
+            socialVelocity: socialVelocity,
+            newsMentions24h: newsMentions24h
+        }));
 
         emit AttentionReportUpdated(
             marketId,
@@ -182,9 +212,30 @@ contract AttentionOracle is IPriceOracle {
         if (bytes(marketId).length > 0 && attentionMarkets[marketId].isConfigured) {
             attentionMarkets[marketId].indexPrice = price;
             attentionMarkets[marketId].lastUpdatedAt = block.timestamp;
+
+            marketHistory[marketId].push(HistoricalReport({
+                timestamp: block.timestamp,
+                indexPrice: price,
+                sentimentScore: attentionMarkets[marketId].sentimentScore,
+                socialVelocity: attentionMarkets[marketId].socialVelocity,
+                newsMentions24h: attentionMarkets[marketId].newsMentions24h
+            }));
         }
 
         emit PriceUpdated(asset, price);
+    }
+
+    /// @notice Seed/backfill historical hourly reports (for initial deployment baseline)
+    function seedHistoricalReports(
+        string calldata marketId,
+        HistoricalReport[] calldata reports
+    ) external onlyOwner {
+        if (!attentionMarkets[marketId].isConfigured) revert MarketNotFound(marketId);
+        uint256 len = reports.length;
+        for (uint256 i = 0; i < len; i++) {
+            marketHistory[marketId].push(reports[i]);
+        }
+        emit HistoricalReportsSeeded(marketId, len);
     }
 
     // --- VIEW FUNCTIONS ---
@@ -200,5 +251,31 @@ contract AttentionOracle is IPriceOracle {
 
     function getAllMarketIds() external view returns (string[] memory) {
         return registeredMarketIds;
+    }
+
+    /// @notice Get total count of historical snapshots for a given market
+    function getHistoryLength(string calldata marketId) external view returns (uint256) {
+        return marketHistory[marketId].length;
+    }
+
+    /// @notice Retrieve the latest N historical reports for a given market (chronological order)
+    function getHistoricalReports(
+        string calldata marketId,
+        uint256 limit
+    ) external view returns (HistoricalReport[] memory) {
+        uint256 total = marketHistory[marketId].length;
+        if (total == 0) {
+            return new HistoricalReport[](0);
+        }
+
+        uint256 count = (limit == 0 || limit > total) ? total : limit;
+        HistoricalReport[] memory result = new HistoricalReport[](count);
+
+        uint256 startIndex = total - count;
+        for (uint256 i = 0; i < count; i++) {
+            result[i] = marketHistory[marketId][startIndex + i];
+        }
+
+        return result;
     }
 }

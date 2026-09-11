@@ -33,6 +33,14 @@ contract AttentionOracleTest is Test {
         assertEq(robotsData.name, "Humanoid Robots");
         assertEq(robotsData.indexPrice, 75.50e18);
         assertTrue(robotsData.isConfigured);
+
+        // Verify initial baseline report is recorded in history
+        assertEq(oracle.getHistoryLength("ROBOTS"), 1);
+        AttentionOracle.HistoricalReport[] memory history = oracle.getHistoricalReports("ROBOTS", 10);
+        assertEq(history.length, 1);
+        assertEq(history[0].indexPrice, 75.50e18);
+        assertEq(history[0].sentimentScore, 50);
+        assertEq(history[0].socialVelocity, 70);
     }
 
     function test_ReporterCanUpdateAttentionReport() public {
@@ -51,6 +59,72 @@ contract AttentionOracleTest is Test {
         assertEq(data.sentimentScore, 65);
         assertEq(data.socialVelocity, 85);
         assertEq(data.newsMentions24h, 58000);
+
+        // Check history now has 2 reports
+        assertEq(oracle.getHistoryLength("ROBOTS"), 2);
+        AttentionOracle.HistoricalReport[] memory history = oracle.getHistoricalReports("ROBOTS", 0);
+        assertEq(history.length, 2);
+        assertEq(history[1].indexPrice, 78.25e18);
+        assertEq(history[1].sentimentScore, 65);
+    }
+
+    function test_HistoricalReports_PaginationAndLimits() public {
+        vm.startPrank(reporter);
+        for (uint256 i = 1; i <= 10; i++) {
+            vm.warp(block.timestamp + 3600); // 1 hour per snapshot
+            oracle.updateAttentionReport(
+                "ROBOTS",
+                (75 + i) * 1e18,
+                int256(50 + i),
+                70 + uint32(i),
+                50000 + uint32(i * 1000)
+            );
+        }
+        vm.stopPrank();
+
+        // 1 initial + 10 updates = 11 total
+        assertEq(oracle.getHistoryLength("ROBOTS"), 11);
+
+        // Fetch last 5 reports
+        AttentionOracle.HistoricalReport[] memory last5 = oracle.getHistoricalReports("ROBOTS", 5);
+        assertEq(last5.length, 5);
+        // Latest report should be (75 + 10) = 85e18
+        assertEq(last5[4].indexPrice, 85e18);
+        assertEq(last5[0].indexPrice, 81e18);
+    }
+
+    function test_SeedHistoricalReports() public {
+        AttentionOracle.HistoricalReport[] memory seeds = new AttentionOracle.HistoricalReport[](3);
+        seeds[0] = AttentionOracle.HistoricalReport({
+            timestamp: 1000,
+            indexPrice: 70e18,
+            sentimentScore: 45,
+            socialVelocity: 60,
+            newsMentions24h: 40000
+        });
+        seeds[1] = AttentionOracle.HistoricalReport({
+            timestamp: 2000,
+            indexPrice: 72e18,
+            sentimentScore: 48,
+            socialVelocity: 65,
+            newsMentions24h: 45000
+        });
+        seeds[2] = AttentionOracle.HistoricalReport({
+            timestamp: 3000,
+            indexPrice: 74e18,
+            sentimentScore: 52,
+            socialVelocity: 72,
+            newsMentions24h: 48000
+        });
+
+        oracle.seedHistoricalReports("ROBOTS", seeds);
+
+        // 1 initial + 3 seeds = 4 total
+        assertEq(oracle.getHistoryLength("ROBOTS"), 4);
+        AttentionOracle.HistoricalReport[] memory history = oracle.getHistoricalReports("ROBOTS", 4);
+        assertEq(history[1].indexPrice, 70e18);
+        assertEq(history[2].indexPrice, 72e18);
+        assertEq(history[3].indexPrice, 74e18);
     }
 
     function test_BatchUpdateAttentionReports() public {
@@ -85,6 +159,10 @@ contract AttentionOracleTest is Test {
         assertEq(oracle.getPrice(robotsAsset), 72.10e18);
         assertEq(oracle.getPrice(gta6Asset), 45.30e18);
         assertEq(oracle.getPrice(deepseekAsset), 92.50e18);
+
+        assertEq(oracle.getHistoryLength("ROBOTS"), 2);
+        assertEq(oracle.getHistoryLength("GTA6"), 2);
+        assertEq(oracle.getHistoryLength("DEEPSEEK"), 2);
     }
 
     function test_SetPrice_BackwardsCompatibility() public {
@@ -93,6 +171,9 @@ contract AttentionOracleTest is Test {
 
         AttentionOracle.AttentionData memory data = oracle.getAttentionData("ROBOTS");
         assertEq(data.indexPrice, 80.00e18);
+
+        // setPrice also records historical snapshot
+        assertEq(oracle.getHistoryLength("ROBOTS"), 2);
     }
 
     function test_RevertWhen_NonReporterUpdates() public {
