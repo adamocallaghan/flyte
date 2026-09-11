@@ -51,6 +51,9 @@ contract DeployArbitrum is Script {
         oracle.registerMarket("GTA6", "Grand Theft Auto VI", MARKET_GTA6, 42.10e18);
         oracle.registerMarket("DEEPSEEK", "DeepSeek AI", MARKET_DEEPSEEK, 88.40e18);
 
+        // Seed 24-hour historical hourly baseline reports for all 3 markets
+        _seedBaselineReports(oracle);
+
         // Set default collateral/settlement price on oracle for PerpAquaApp compatibility
         oracle.setPrice(address(aUsdc), 75.50e18);
 
@@ -91,5 +94,64 @@ contract DeployArbitrum is Script {
         console.log("NEXT_PUBLIC_PERP_APP_ADDRESS=", address(app));
         console.log("NEXT_PUBLIC_SWAP_VM_ROUTER_ADDRESS=", address(router));
         console.log("=================================================");
+    }
+
+    function _seedBaselineReports(AttentionOracle oracle) internal {
+        uint256 baseTime = block.timestamp > 86400 ? block.timestamp - 86400 : 1000;
+
+        AttentionOracle.HistoricalReport[] memory robotsHistory = new AttentionOracle.HistoricalReport[](24);
+        AttentionOracle.HistoricalReport[] memory gta6History = new AttentionOracle.HistoricalReport[](24);
+        AttentionOracle.HistoricalReport[] memory deepseekHistory = new AttentionOracle.HistoricalReport[](24);
+
+        int256[24] memory robotsPriceDeltas = [
+            int256(7120), 7140, 7180, 7150, 7210, 7260, 7230, 7290,
+            7310, 7350, 7320, 7380, 7420, 7390, 7450, 7480,
+            7440, 7500, 7520, 7490, 7530, 7510, 7540, 7550
+        ];
+
+        int256[24] memory gta6PriceDeltas = [
+            int256(3950), 3970, 3990, 3980, 4010, 4030, 4050, 4040,
+            4070, 4090, 4110, 4100, 4130, 4150, 4140, 4160,
+            4180, 4170, 4190, 4200, 4190, 4210, 4200, 4210
+        ];
+
+        int256[24] memory deepseekPriceDeltas = [
+            int256(8120), 8160, 8210, 8250, 8300, 8350, 8420, 8480,
+            8530, 8590, 8640, 8680, 8720, 8760, 8790, 8820,
+            8850, 8810, 8840, 8820, 8860, 8830, 8850, 8840
+        ];
+
+        for (uint256 i = 0; i < 24; i++) {
+            uint256 t = baseTime + (i * 3600);
+
+            robotsHistory[i] = AttentionOracle.HistoricalReport({
+                timestamp: t,
+                indexPrice: uint256(uint256(robotsPriceDeltas[i]) * 1e16),
+                sentimentScore: int256(40 + (i % 25)),
+                socialVelocity: uint32(65 + (i % 25)),
+                newsMentions24h: uint32(45000 + (i * 550))
+            });
+
+            gta6History[i] = AttentionOracle.HistoricalReport({
+                timestamp: t,
+                indexPrice: uint256(uint256(gta6PriceDeltas[i]) * 1e16),
+                sentimentScore: int256(55 + (i % 20)),
+                socialVelocity: uint32(70 + (i % 20)),
+                newsMentions24h: uint32(60000 + (i * 1200))
+            });
+
+            deepseekHistory[i] = AttentionOracle.HistoricalReport({
+                timestamp: t,
+                indexPrice: uint256(uint256(deepseekPriceDeltas[i]) * 1e16),
+                sentimentScore: int256(60 + (i % 25)),
+                socialVelocity: uint32(75 + (i % 20)),
+                newsMentions24h: uint32(50000 + (i * 900))
+            });
+        }
+
+        oracle.seedHistoricalReports("ROBOTS", robotsHistory);
+        oracle.seedHistoricalReports("GTA6", gta6History);
+        oracle.seedHistoricalReports("DEEPSEEK", deepseekHistory);
+        console.log("Seeded 24 hours of baseline historical attention reports for all markets");
     }
 }
