@@ -100,7 +100,7 @@ export async function queryFilterInChunks(
   filter: any,
   fromBlock: number,
   toBlock: number,
-  chunkSize = 50000
+  chunkSize = 25000
 ): Promise<any[]> {
   if (toBlock < fromBlock) return [];
   // Safety cap: never scan more than 500,000 blocks to prevent memory exhaustion or thousands of promises

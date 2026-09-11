@@ -11,6 +11,7 @@ import {
   DEFAULT_PERP_APP_ADDRESS,
   queryFilterInChunks,
   getEventStartBlock,
+  PERP_AQUA_APP_ABI,
 } from '../config/contracts';
 import { useWeb3 } from '../context/Web3Context';
 
@@ -277,16 +278,40 @@ export const SharedCoverage: React.FC = () => {
         }
       }
 
-      // 2. Query On-Chain Aqua JIT Pull Events (PositionOpened & Closed from PerpApp)
+      // 2. Authoritatively query active open positions directly from PerpAquaApp storage
       let totalLocked = 0;
       const logsList: AquaPullLog[] = [];
+      const openPositions: { id: number; pos: any; lpMargin: number }[] = [];
 
-      if (appContract) {
+      const targetAppContract = appContract || (provider && ethers.isAddress(appAddress) ? new ethers.Contract(appAddress, PERP_AQUA_APP_ABI, provider) : null);
+
+      if (targetAppContract) {
+        try {
+          const nextIdRaw = await targetAppContract.nextPositionId().catch(() => BigInt(1));
+          const nextId = Number(nextIdRaw);
+
+          for (let i = 1; i < nextId; i++) {
+            try {
+              const pos = await targetAppContract.positions(i);
+              if (pos && pos.isOpen) {
+                const lpMargin = parseFloat(ethers.formatUnits(pos.lpMargin, 6));
+                totalLocked += lpMargin;
+                openPositions.push({ id: i, pos, lpMargin });
+              }
+            } catch (posErr) {
+              console.warn(`Error reading position #${i} in Coverage dashboard:`, posErr);
+            }
+          }
+        } catch (err) {
+          console.warn('Error reading on-chain positions for locked margin:', err);
+        }
+
+        // Query historical event logs to populate the audit log table
         try {
           const [openLogs, closeLogs, liqLogs] = await Promise.all([
-            queryFilterInChunks(appContract, appContract.filters.PositionOpened(), startBlock, currentBlock),
-            queryFilterInChunks(appContract, appContract.filters.PositionClosed(), startBlock, currentBlock),
-            queryFilterInChunks(appContract, appContract.filters.PositionLiquidated(), startBlock, currentBlock),
+            queryFilterInChunks(targetAppContract, targetAppContract.filters.PositionOpened(), startBlock, currentBlock),
+            queryFilterInChunks(targetAppContract, targetAppContract.filters.PositionClosed(), startBlock, currentBlock),
+            queryFilterInChunks(targetAppContract, targetAppContract.filters.PositionLiquidated(), startBlock, currentBlock),
           ]);
 
           // Process PositionOpened logs (each corresponds to an atomic AQUA.pull())
@@ -304,7 +329,7 @@ export const SharedCoverage: React.FC = () => {
               const isClosed = closeLogs.some((c: any) => Number(c.args.positionId) === posId) ||
                                liqLogs.some((l: any) => Number(l.args.positionId) === posId);
 
-              if (!isClosed) {
+              if (!isClosed && totalLocked === 0) {
                 totalLocked += lpMargin;
               }
 
@@ -369,10 +394,43 @@ export const SharedCoverage: React.FC = () => {
             } catch {}
           }
 
+          // Fallback: If openLogs missed any open position from storage (e.g. RPC log limits or indexing lag), ensure it appears in the audit table
+          for (const { id, pos, lpMargin } of openPositions) {
+            const alreadyInLogs = logsList.some((l) => l.positionId === id && l.eventType === 'pull');
+            if (!alreadyInLogs) {
+              logsList.push({
+                txHash: '',
+                blockNumber: currentBlock,
+                positionId: id,
+                eventType: 'pull',
+                trader: pos.trader,
+                lp: pos.lp,
+                strategyHash: pos.strategyHash,
+                amount: lpMargin,
+                timestamp: pos.openTimestamp ? new Date(Number(pos.openTimestamp) * 1000).toLocaleTimeString() : 'Active',
+                isLong: pos.isLong,
+              });
+            }
+          }
+
           // Sort descending by block number
           logsList.sort((a, b) => b.blockNumber - a.blockNumber);
         } catch (e) {
           console.warn('Could not query app logs for pull audit:', e);
+          for (const { id, pos, lpMargin } of openPositions) {
+            logsList.push({
+              txHash: '',
+              blockNumber: currentBlock,
+              positionId: id,
+              eventType: 'pull',
+              trader: pos.trader,
+              lp: pos.lp,
+              strategyHash: pos.strategyHash,
+              amount: lpMargin,
+              timestamp: pos.openTimestamp ? new Date(Number(pos.openTimestamp) * 1000).toLocaleTimeString() : 'Active',
+              isLong: pos.isLong,
+            });
+          }
         }
       }
 
