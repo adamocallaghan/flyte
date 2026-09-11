@@ -17,6 +17,7 @@ import {
   DemoRoleConfig,
   PERP_AQUA_APP_ABI,
   MOCK_PRICE_ORACLE_ABI,
+  ATTENTION_ORACLE_ABI,
   AQUA_ABI,
   ERC20_ABI,
   MOCK_AAVE_YIELD_TOKEN_ABI,
@@ -83,6 +84,7 @@ export interface Web3ContextType {
   // Actions
   connectBrowserWallet: () => Promise<void>;
   switchOrAddAnvilNetwork: (targetChainId?: number) => Promise<void>;
+  switchOrAddArbitrumNetwork: () => Promise<void>;
 }
 
 const Web3Context = createContext<Web3ContextType | null>(null);
@@ -177,30 +179,43 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
             setIsFork(Number(network.chainId) === ANVIL_CHAIN_ID || Number(network.chainId) === ARBITRUM_ONE_CHAIN_ID);
           }
         } else {
-          // Demo Roles on Local Anvil Fork
-          const jsonRpcProv = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
-          let currentChainId = ANVIL_CHAIN_ID;
+          // Check if local Anvil fork is running; otherwise fallback seamlessly to Arbitrum One
+          let prov: ethers.JsonRpcProvider;
+          let currentChainId = ARBITRUM_ONE_CHAIN_ID;
           let currentBlock = 0;
+          let activeFork = false;
+          let activeSigner: ethers.Signer | null = null;
+          const roleConf = DEMO_ROLES[role];
 
           try {
-            const network = await jsonRpcProv.getNetwork();
-            currentChainId = Number(network.chainId);
-            currentBlock = await jsonRpcProv.getBlockNumber();
+            const localProv = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
+            const net = await Promise.race([
+              localProv.getNetwork(),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 800)),
+            ]) as ethers.Network;
+            currentChainId = Number(net.chainId);
+            currentBlock = await localProv.getBlockNumber();
+            prov = localProv;
+            activeFork = true;
+            activeSigner = new ethers.Wallet(roleConf.privateKey, localProv);
           } catch {
-            // Anvil might not be running yet, fallback gracefully
-            currentChainId = ANVIL_CHAIN_ID;
+            // Local Anvil not running: Fallback to Arbitrum One Mainnet RPC
+            prov = new ethers.JsonRpcProvider(ARBITRUM_RPC_URL);
+            currentChainId = ARBITRUM_ONE_CHAIN_ID;
+            activeFork = false;
+            activeSigner = null;
+            try {
+              currentBlock = await prov.getBlockNumber();
+            } catch {}
           }
 
-          const roleConf = DEMO_ROLES[role];
-          const demoWallet = new ethers.Wallet(roleConf.privateKey, jsonRpcProv);
-
           if (!isCancelled) {
-            setProvider(jsonRpcProv);
-            setSigner(demoWallet);
+            setProvider(prov);
+            setSigner(activeSigner);
             setAccount(roleConf.address);
             setChainId(currentChainId);
             setBlockNumber(currentBlock);
-            setIsFork(true);
+            setIsFork(activeFork);
           }
         }
       } catch (err: any) {
@@ -234,7 +249,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
       : null;
 
     const oracle = ethers.isAddress(oracleAddress)
-      ? new ethers.Contract(oracleAddress, MOCK_PRICE_ORACLE_ABI, runner)
+      ? new ethers.Contract(oracleAddress, ATTENTION_ORACLE_ABI, runner)
       : null;
 
     const aqua = new ethers.Contract(AQUA_REGISTRY_ADDRESS, AQUA_ABI, runner);
@@ -325,6 +340,44 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Switch or Add Arbitrum One Network to MetaMask / Browser Wallet
+  const switchOrAddArbitrumNetwork = useCallback(async () => {
+    if (typeof window === 'undefined' || !(window as any).ethereum) {
+      alert('No browser wallet detected! Please install MetaMask or Rabby.');
+      return;
+    }
+    const hexChainId = '0x' + ARBITRUM_ONE_CHAIN_ID.toString(16);
+    try {
+      await (window as any).ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: hexChainId }],
+      });
+      setRoleState('browser');
+    } catch (switchError: any) {
+      if (switchError.code === 4902 || switchError.data?.originalError?.code === 4902) {
+        try {
+          await (window as any).ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [
+              {
+                chainId: hexChainId,
+                chainName: 'Arbitrum One',
+                rpcUrls: [ARBITRUM_RPC_URL],
+                nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+                blockExplorerUrls: ['https://arbiscan.io'],
+              },
+            ],
+          });
+          setRoleState('browser');
+        } catch (addError: any) {
+          console.error('Failed to add Arbitrum One network to wallet:', addError);
+        }
+      } else {
+        console.warn('Arbitrum One network switch failed:', switchError);
+      }
+    }
+  }, []);
+
   // Switch or Add Anvil Local Network to MetaMask / Browser Wallet
   const switchOrAddAnvilNetwork = useCallback(async (targetChainId: number = ANVIL_CHAIN_ID) => {
     if (typeof window === 'undefined' || !(window as any).ethereum) {
@@ -390,6 +443,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
       aUsdcContract: contracts.aUsdc,
       connectBrowserWallet,
       switchOrAddAnvilNetwork,
+      switchOrAddArbitrumNetwork,
     }),
     [
       account,
@@ -413,6 +467,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
       contracts,
       connectBrowserWallet,
       switchOrAddAnvilNetwork,
+      switchOrAddArbitrumNetwork,
     ]
   );
 

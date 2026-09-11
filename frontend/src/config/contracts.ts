@@ -10,14 +10,15 @@ export const ARBITRUM_RPC_URL = process.env.NEXT_PUBLIC_ARBITRUM_RPC || 'https:/
 export const AQUA_REGISTRY_ADDRESS = '0x1111113CCf1426A8E30e2bfF5E005d929bF6a90a';
 export const AAVE_POOL_ADDRESS = '0x794a61358D6845594F94dc1DB02A252b5b4814aD';
 export const USDC_ADDRESS = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
-export const A_USDC_ADDRESS = process.env.NEXT_PUBLIC_A_USDC_ADDRESS || '0x724dc807b04555b71ed48a6896b6F41593b8C637';
+// Live Arbitrum One MockAaveYieldToken (aUSDC) with continuous rebasing yield and faucet
+export const A_USDC_ADDRESS = process.env.NEXT_PUBLIC_A_USDC_ADDRESS || '0x20C0Ba2e4e87e15eFD383acc7C10e422d9c4D409';
 export const WETH_ADDRESS = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1';
 
-// Default / Configurable Contract Addresses
+// Default / Configurable Contract Addresses (Arbitrum One Mainnet)
 // Can be overridden in UI settings or via process.env
-export const DEFAULT_PERP_APP_ADDRESS = process.env.NEXT_PUBLIC_PERP_APP_ADDRESS || '0xf8cfaedc2f104ed51a24328575a78a0d9cf47f5c';
-export const DEFAULT_ORACLE_ADDRESS = process.env.NEXT_PUBLIC_ORACLE_ADDRESS || '0x521e37c5DFF638fA088c399A93A4c6d2CC4993Fb';
-export const DEFAULT_ROUTER_ADDRESS = process.env.NEXT_PUBLIC_ROUTER_ADDRESS || '0x4eecc19a870929c6299185201bb0691e852d4048';
+export const DEFAULT_PERP_APP_ADDRESS = process.env.NEXT_PUBLIC_PERP_APP_ADDRESS || '0x952745CFF543A7c2A03A072C6d60C67ad91767Ca';
+export const DEFAULT_ORACLE_ADDRESS = process.env.NEXT_PUBLIC_ATTENTION_ORACLE_ADDRESS || process.env.NEXT_PUBLIC_ORACLE_ADDRESS || '0x5bE054244618317f503CF1E1Ee268CEa21b1B424';
+export const DEFAULT_ROUTER_ADDRESS = process.env.NEXT_PUBLIC_SWAP_VM_ROUTER_ADDRESS || process.env.NEXT_PUBLIC_ROUTER_ADDRESS || '0xb27c3FB38264902e1f00C196E6904896042796B6';
 
 export interface DemoRoleConfig {
   id: 'trader' | 'lp' | 'keeper';

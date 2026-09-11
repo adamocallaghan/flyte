@@ -5,6 +5,8 @@ import { ethers } from 'ethers';
 import { useWeb3, UserRole } from '../context/Web3Context';
 import { useMarket } from '../context/MarketContext';
 import {
+  ARBITRUM_ONE_CHAIN_ID,
+  ANVIL_CHAIN_ID,
   shortenAddress,
   DEMO_ROLES,
   A_USDC_ADDRESS,
@@ -34,6 +36,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
     resetToDefaultAddresses,
     connectBrowserWallet,
     switchOrAddAnvilNetwork,
+    switchOrAddArbitrumNetwork,
     refreshBalances,
     aUsdcContract,
     signer,
@@ -505,17 +508,48 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                 </span>
               </div>
 
-              {/* Add / Switch to Anvil Network Button for MetaMask */}
+              {/* Network Status Pill */}
+              <div className="border border-neutral-300 bg-neutral-50 px-3 py-2 flex items-center justify-between font-mono text-xs">
+                <span className="text-gray-600 font-bold uppercase">Target Network:</span>
+                <span className={`px-2 py-0.5 font-bold border border-black ${
+                  chainId === ARBITRUM_ONE_CHAIN_ID
+                    ? 'bg-[#00F076] text-black'
+                    : chainId === ANVIL_CHAIN_ID
+                    ? 'bg-[#FFE600] text-black'
+                    : 'bg-[#FF3366] text-white'
+                }`}>
+                  {chainId === ARBITRUM_ONE_CHAIN_ID
+                    ? '● ARBITRUM ONE (42161)'
+                    : chainId === ANVIL_CHAIN_ID
+                    ? '● ANVIL FORK (31337)'
+                    : '● UNSUPPORTED CHAIN'}
+                </span>
+              </div>
+
+              {/* Switch to Arbitrum One Mainnet Button */}
+              <button
+                type="button"
+                onClick={async () => {
+                  await switchOrAddArbitrumNetwork();
+                  setRoleModalOpen(false);
+                }}
+                className="w-full h-10 border-2 border-black bg-[#00E5FF] hover:bg-[#00cbe2] text-black font-bold font-mono text-xs uppercase shadow-[2px_2px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center justify-center gap-2 cursor-pointer"
+                title="Switch MetaMask / Rabby to Arbitrum One (Chain ID 42161)"
+              >
+                <span>⚡</span> Switch Wallet to Arbitrum One (42161)
+              </button>
+
+              {/* Optional Anvil button for local developers */}
               <button
                 type="button"
                 onClick={async () => {
                   await switchOrAddAnvilNetwork();
                   setRoleModalOpen(false);
                 }}
-                className="w-full h-10 border-2 border-black bg-[#FFE600] hover:bg-[#ffe100] text-black font-bold font-mono text-xs uppercase shadow-[2px_2px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center justify-center gap-2 cursor-pointer mt-1"
+                className="w-full h-9 border-2 border-black bg-neutral-100 hover:bg-neutral-200 text-black font-bold font-mono text-xs uppercase shadow-[1px_1px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none flex items-center justify-center gap-2 cursor-pointer"
                 title="Switch MetaMask to local Anvil network (Chain ID 31337)"
               >
-                <span>🦊</span> Switch MetaMask to Anvil (31337)
+                <span>💻</span> Switch to Local Anvil (31337)
               </button>
             </div>
           </div>
