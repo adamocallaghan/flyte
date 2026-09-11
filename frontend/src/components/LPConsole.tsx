@@ -10,6 +10,9 @@ import {
   formatUsd,
   shortenAddress,
   LOCAL_RPC_URL,
+  DEFAULT_PERP_APP_ADDRESS,
+  queryFilterInChunks,
+  getEventStartBlock,
 } from '../config/contracts';
 
 export interface ShippedQuote {
@@ -39,6 +42,7 @@ export const LPConsole: React.FC = () => {
     provider,
     signer,
     isFork,
+    chainId,
     refreshBalances,
   } = useWeb3();
 
@@ -53,7 +57,34 @@ export const LPConsole: React.FC = () => {
   const [sideMask, setSideMask] = useState<number>(3); // 3 = Both, 1 = Long, 2 = Short
   const [quoteExpiry, setQuoteExpiry] = useState<number>(0); // 0 = perpetual
 
-  const [shippedQuotes, setShippedQuotes] = useState<ShippedQuote[]>([]);
+  const cacheKey = `flyte_aqua_quotes_${(appAddress || DEFAULT_PERP_APP_ADDRESS).toLowerCase()}`;
+
+  const getCachedQuotes = React.useCallback((): ShippedQuote[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem(cacheKey);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  }, [cacheKey]);
+
+  const saveCachedQuotes = React.useCallback((quotes: ShippedQuote[]) => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(quotes));
+    } catch {}
+  }, [cacheKey]);
+
+  const [shippedQuotes, setShippedQuotes] = useState<ShippedQuote[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(`flyte_aqua_quotes_${DEFAULT_PERP_APP_ADDRESS.toLowerCase()}`);
+        return saved ? JSON.parse(saved) : [];
+      } catch {}
+    }
+    return [];
+  });
   const [isApproving, setIsApproving] = useState<boolean>(false);
   const [isShipping, setIsShipping] = useState<boolean>(false);
   const [dockingHash, setDockingHash] = useState<string | null>(null);
@@ -84,11 +115,11 @@ export const LPConsole: React.FC = () => {
 
     try {
       const currentBlock = await provider.getBlockNumber();
-      const startBlock = Math.max(0, currentBlock - 2000);
+      const startBlock = getEventStartBlock(currentBlock, chainId);
 
       const [shippedLogs, dockedLogs] = await Promise.all([
-        aquaContract.queryFilter(aquaContract.filters.Shipped(), startBlock, 'latest').catch(() => []),
-        aquaContract.queryFilter(aquaContract.filters.Docked(), startBlock, 'latest').catch(() => []),
+        queryFilterInChunks(aquaContract, aquaContract.filters.Shipped(), startBlock, currentBlock),
+        queryFilterInChunks(aquaContract, aquaContract.filters.Docked(), startBlock, currentBlock),
       ]);
 
       const dockedHashes = new Set(
@@ -146,12 +177,32 @@ export const LPConsole: React.FC = () => {
         }
       }
 
+      // Merge with any cached quotes
+      const cached = getCachedQuotes();
+      for (const q of cached) {
+        if (!quoteMap.has(q.strategyHash.toLowerCase())) {
+          let currentBalance = q.currentBalance || q.maxNotional;
+          let isDocked = q.status === 'docked' || dockedHashes.has(q.strategyHash.toLowerCase());
+          try {
+            const [bal] = await (aquaContract as any).rawBalances(q.maker, appAddress, q.strategyHash, q.collateralToken);
+            currentBalance = parseFloat(ethers.formatUnits(bal, 6));
+            if (currentBalance === 0) isDocked = true;
+          } catch {}
+          quoteMap.set(q.strategyHash.toLowerCase(), {
+            ...q,
+            currentBalance,
+            status: isDocked ? 'docked' : 'active',
+          });
+        }
+      }
+
       const loaded = Array.from(quoteMap.values());
       setShippedQuotes(loaded);
+      saveCachedQuotes(loaded);
     } catch (err) {
       console.warn('Could not load Aqua strategies:', err);
     }
-  }, [aquaContract, provider, appAddress]);
+  }, [aquaContract, provider, appAddress, chainId, getCachedQuotes, saveCachedQuotes]);
 
   useEffect(() => {
     loadAquaStrategies();
@@ -289,6 +340,24 @@ export const LPConsole: React.FC = () => {
           gasLimit ? { gasLimit } : {}
         );
         const receipt = await tx.wait();
+
+        const newQuote: ShippedQuote = {
+          strategyHash: computedHash,
+          maker: lpAddr,
+          collateralToken: A_USDC_ADDRESS,
+          maxNotional: notionalAmount,
+          currentBalance: notionalAmount,
+          maxLeverage,
+          spreadBps,
+          sideMask,
+          quoteExpiry,
+          status: 'active',
+        };
+        setShippedQuotes((prev) => {
+          const updated = [newQuote, ...prev.filter(q => q.strategyHash.toLowerCase() !== computedHash.toLowerCase())];
+          saveCachedQuotes(updated);
+          return updated;
+        });
 
         await loadAquaStrategies();
         await refreshBalances();

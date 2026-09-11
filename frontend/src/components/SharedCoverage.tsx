@@ -8,6 +8,8 @@ import {
   A_USDC_ADDRESS,
   AQUA_REGISTRY_ADDRESS,
   DEMO_ROLES,
+  queryFilterInChunks,
+  getEventStartBlock,
 } from '../config/contracts';
 import { useWeb3 } from '../context/Web3Context';
 
@@ -45,6 +47,7 @@ export const SharedCoverage: React.FC = () => {
     aUsdcContract,
     provider,
     account,
+    chainId,
   } = useWeb3();
 
   const [strategies, setStrategies] = useState<StrategyCoverage[]>([]);
@@ -60,7 +63,7 @@ export const SharedCoverage: React.FC = () => {
     setIsLoading(true);
     try {
       const currentBlock = await provider.getBlockNumber();
-      const startBlock = Math.max(0, currentBlock - 3000);
+      const startBlock = getEventStartBlock(currentBlock, chainId);
 
       // 1. Query Shipped & Docked strategies from 1inch Aqua Registry
       let activeStrategies: StrategyCoverage[] = [];
@@ -70,8 +73,8 @@ export const SharedCoverage: React.FC = () => {
       if (aquaContract && aUsdcContract) {
         try {
           const [shippedLogs, dockedLogs] = await Promise.all([
-            aquaContract.queryFilter(aquaContract.filters.Shipped(), startBlock, 'latest').catch(() => []),
-            aquaContract.queryFilter(aquaContract.filters.Docked(), startBlock, 'latest').catch(() => []),
+            queryFilterInChunks(aquaContract, aquaContract.filters.Shipped(), startBlock, currentBlock),
+            queryFilterInChunks(aquaContract, aquaContract.filters.Docked(), startBlock, currentBlock),
           ]);
 
           const dockedHashes = new Set(
@@ -166,9 +169,9 @@ export const SharedCoverage: React.FC = () => {
       if (appContract) {
         try {
           const [openLogs, closeLogs, liqLogs] = await Promise.all([
-            appContract.queryFilter(appContract.filters.PositionOpened(), startBlock, 'latest').catch(() => []),
-            appContract.queryFilter(appContract.filters.PositionClosed(), startBlock, 'latest').catch(() => []),
-            appContract.queryFilter(appContract.filters.PositionLiquidated(), startBlock, 'latest').catch(() => []),
+            queryFilterInChunks(appContract, appContract.filters.PositionOpened(), startBlock, currentBlock),
+            queryFilterInChunks(appContract, appContract.filters.PositionClosed(), startBlock, currentBlock),
+            queryFilterInChunks(appContract, appContract.filters.PositionLiquidated(), startBlock, currentBlock),
           ]);
 
           // Process PositionOpened logs (each corresponds to an atomic AQUA.pull())
@@ -266,7 +269,7 @@ export const SharedCoverage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [provider, appAddress, aquaContract, aUsdcContract, appContract]);
+  }, [provider, appAddress, chainId, aquaContract, aUsdcContract, appContract]);
 
   useEffect(() => {
     loadCoverageData();

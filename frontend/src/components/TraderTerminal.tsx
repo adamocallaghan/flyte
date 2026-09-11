@@ -15,6 +15,8 @@ import {
   DEMO_ROLES,
   formatUsd,
   shortenAddress,
+  queryFilterInChunks,
+  getEventStartBlock,
 } from '../config/contracts';
 
 interface ActiveAquaQuote {
@@ -42,6 +44,7 @@ export const TraderTerminal: React.FC = () => {
   const {
     account,
     role,
+    chainId,
     balances,
     appContract,
     aUsdcContract,
@@ -71,11 +74,11 @@ export const TraderTerminal: React.FC = () => {
 
     try {
       const currentBlock = await provider.getBlockNumber();
-      const startBlock = Math.max(0, currentBlock - 2000);
+      const startBlock = getEventStartBlock(currentBlock, chainId);
 
       const [shippedLogs, dockedLogs] = await Promise.all([
-        aquaContract.queryFilter(aquaContract.filters.Shipped(), startBlock, 'latest').catch(() => []),
-        aquaContract.queryFilter(aquaContract.filters.Docked(), startBlock, 'latest').catch(() => []),
+        queryFilterInChunks(aquaContract, aquaContract.filters.Shipped(), startBlock, currentBlock),
+        queryFilterInChunks(aquaContract, aquaContract.filters.Docked(), startBlock, currentBlock),
       ]);
 
       const dockedHashes = new Set(
@@ -149,7 +152,7 @@ export const TraderTerminal: React.FC = () => {
     } finally {
       setIsLoadingQuotes(false);
     }
-  }, [aquaContract, provider, appAddress]);
+  }, [aquaContract, provider, appAddress, chainId]);
 
   useEffect(() => {
     loadQuotes();

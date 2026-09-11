@@ -87,3 +87,42 @@ export function formatToken(amount: bigint | string | number, decimals = 6, disp
 }
 
 export { PERP_AQUA_APP_ABI, MOCK_PRICE_ORACLE_ABI, ATTENTION_ORACLE_ABI, AQUA_ABI, ERC20_ABI, MOCK_AAVE_YIELD_TOKEN_ABI };
+
+// Flyte PerpAquaApp Deployment Block on Arbitrum One Mainnet
+export const FLYTE_DEPLOYMENT_BLOCK = 504090000;
+
+/**
+ * Safely queries event logs in chunks of up to 50,000 blocks to prevent
+ * RPC block-range limit failures on Arbitrum One or other public RPCs.
+ */
+export async function queryFilterInChunks(
+  contract: ethers.Contract,
+  filter: any,
+  fromBlock: number,
+  toBlock: number,
+  chunkSize = 50000
+): Promise<any[]> {
+  if (toBlock < fromBlock) return [];
+  if (toBlock - fromBlock <= chunkSize) {
+    return await contract.queryFilter(filter, fromBlock, toBlock).catch(() => []);
+  }
+
+  const promises: Promise<any[]>[] = [];
+  for (let b = fromBlock; b <= toBlock; b += chunkSize) {
+    const end = Math.min(b + chunkSize - 1, toBlock);
+    promises.push(contract.queryFilter(filter, b, end).catch(() => []));
+  }
+
+  const results = await Promise.all(promises);
+  return results.flat();
+}
+
+/**
+ * Get starting block for event scanning based on chain ID and deployment block.
+ */
+export function getEventStartBlock(currentBlock: number, chainId: number | null): number {
+  if (chainId === ARBITRUM_ONE_CHAIN_ID || (chainId !== ANVIL_CHAIN_ID && chainId !== null)) {
+    return Math.max(FLYTE_DEPLOYMENT_BLOCK, currentBlock - 300000);
+  }
+  return 0;
+}
