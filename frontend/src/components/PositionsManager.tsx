@@ -34,7 +34,7 @@ export const PositionsManager: React.FC = () => {
     refreshBalances,
   } = useWeb3();
 
-  const { btcPrice, selectedMarket, currentMarket } = useMarket();
+  const { btcPrice, selectedMarket, currentMarket, availableMarkets, allMarketHistories } = useMarket();
 
   const [positions, setPositions] = useState<DisplayPosition[]>([]);
   const [filterMine, setFilterMine] = useState<boolean>(true);
@@ -147,6 +147,20 @@ export const PositionsManager: React.FC = () => {
     }
   };
 
+  // Helper to match an on-chain position to its actual market based on entry price
+  const getMarketForPosition = (entryPrice: number) => {
+    let matched = availableMarkets[0];
+    let minDiff = Infinity;
+    for (const m of availableMarkets) {
+      const diff = Math.abs(entryPrice - m.basePrice);
+      if (diff < minDiff) {
+        minDiff = diff;
+        matched = m;
+      }
+    }
+    return matched;
+  };
+
   // Filter positions
   const displayedPositions = filterMine && account
     ? positions.filter((p) => p.trader.toLowerCase() === account.toLowerCase())
@@ -253,8 +267,15 @@ export const PositionsManager: React.FC = () => {
             </thead>
             <tbody>
               {displayedPositions.map((pos, idx) => {
-                // PnL Calculation
-                const priceDelta = pos.isLong ? btcPrice - pos.entryPrice : pos.entryPrice - btcPrice;
+                // Determine accurate market for this position based on its entry price
+                const posMarket = getMarketForPosition(pos.entryPrice);
+                const latestReport = allMarketHistories[posMarket.id]?.length
+                  ? allMarketHistories[posMarket.id][allMarketHistories[posMarket.id].length - 1].indexPrice
+                  : posMarket.basePrice;
+                const posMarkPrice = posMarket.id === currentMarket.id ? btcPrice : latestReport;
+
+                // PnL Calculation using the position's true market mark price
+                const priceDelta = pos.isLong ? posMarkPrice - pos.entryPrice : pos.entryPrice - posMarkPrice;
                 const pnlUsd = (pos.notional * priceDelta) / pos.entryPrice;
                 const roePercent = (pnlUsd / pos.traderMargin) * 100;
                 const isProfitable = pnlUsd >= 0;
@@ -290,7 +311,7 @@ export const PositionsManager: React.FC = () => {
                         >
                           {pos.isLong ? 'LONG' : 'SHORT'}
                         </span>
-                        <span className="font-bold text-black">{selectedMarket || "ROBOTS/USD"}</span>
+                        <span className="font-bold text-black">{posMarket.id}</span>
                         <span className="text-gray-500 font-normal">#{pos.id}</span>
                       </div>
                     </td>
@@ -301,7 +322,7 @@ export const PositionsManager: React.FC = () => {
                         {formatUsd(pos.notional)}
                       </div>
                       <div className="text-[11px] text-gray-700 font-medium">
-                        {pos.leverage}x • {(pos.notional / (btcPrice || 1)).toFixed(4)} {currentMarket.symbol}
+                        {pos.leverage}x • {(pos.notional / (posMarkPrice || 1)).toFixed(4)} {posMarket.symbol}
                       </div>
                     </td>
 
@@ -312,7 +333,7 @@ export const PositionsManager: React.FC = () => {
 
                     {/* 4. Mark Price */}
                     <td className="py-3 px-3 border-r border-black font-bold text-black">
-                      {formatUsd(btcPrice)}
+                      {formatUsd(posMarkPrice)}
                     </td>
 
                     {/* 5. Unrealized PnL (ROE) */}
