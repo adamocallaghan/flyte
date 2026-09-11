@@ -266,17 +266,19 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
 
             {/* Right: Actions, Cheatcodes & Account Selector */}
             <div className="flex items-center gap-2 md:gap-3">
-              {/* Deal 10 ETH Button */}
-              <button
-                type="button"
-                onClick={handleDealEth}
-                disabled={isDealingEth}
-                className="h-10 bg-[#00F076] hover:bg-[#00d86a] text-black uppercase px-4 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2 font-bold text-xs cursor-pointer select-none tracking-wider"
-                title="Deal 10 ETH (native gas) to your wallet on Anvil"
-              >
-                <span>⛽</span>
-                <span className="hidden md:inline">{isDealingEth ? 'DEALING...' : 'DEAL 10 ETH'}</span>
-              </button>
+              {/* Deal 10 ETH Button (Only shown on local Anvil fork) */}
+              {isFork && chainId === ANVIL_CHAIN_ID && (
+                <button
+                  type="button"
+                  onClick={handleDealEth}
+                  disabled={isDealingEth}
+                  className="h-10 bg-[#00F076] hover:bg-[#00d86a] text-black uppercase px-4 border-2 border-black shadow-[2px_2px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2 font-bold text-xs cursor-pointer select-none tracking-wider"
+                  title="Deal 10 ETH (native gas) to your wallet on Anvil"
+                >
+                  <span>⛽</span>
+                  <span className="hidden md:inline">{isDealingEth ? 'DEALING...' : 'DEAL 10 ETH'}</span>
+                </button>
+              )}
 
               {/* Faucet 5k aUSDC button */}
               <button
@@ -302,11 +304,13 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                 type="button"
                 onClick={() => setRoleModalOpen(true)}
                 className="h-10 border-2 border-black bg-[#EAEAEA] hover:bg-neutral-200 px-4 flex items-center gap-2 shadow-[2px_2px_0px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none font-mono text-xs font-bold text-black cursor-pointer select-none tracking-wider"
-                title="Click to switch wallet or demo role"
+                title={isFork ? 'Click to switch demo role or wallet' : 'Click to connect or view wallet'}
               >
-                <span>{role === 'trader' ? '🍔' : role === 'lp' ? '🍇' : role === 'keeper' ? '🤡' : '🦊'}</span>
+                <span>{role === 'browser' ? '🦊' : !isFork ? '🦊' : role === 'trader' ? '🍔' : role === 'lp' ? '🍇' : '🤡'}</span>
                 <span className="hidden sm:inline">
-                  {role === 'browser' ? (account ? shortenAddress(account) : 'Connect Wallet') : DEMO_ROLES[role].name.split(' ')[0]}
+                  {role === 'browser'
+                    ? (account ? shortenAddress(account) : 'Connect Wallet')
+                    : (!isFork ? (account && account !== DEMO_ROLES.trader.address ? shortenAddress(account) : 'Connect Wallet') : DEMO_ROLES[role].name.split(' ')[0])}
                 </span>
                 <span className="text-[10px] text-gray-500">▼</span>
               </button>
@@ -408,8 +412,26 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
               <span className="text-gray-600 uppercase">
                 EXECUTION: <strong className="text-[#006d32] font-bold">ATOMIC JIT</strong>
               </span>
-              <span className="text-gray-600 uppercase">
-                NETWORK: <strong className="text-black">{isFork ? `ANVIL FORK (${chainId || 31337})` : 'ARBITRUM ONE'}</strong>
+              <span className="text-gray-600 uppercase flex items-center gap-1.5">
+                NETWORK:{' '}
+                <span
+                  className={`inline-block w-2 h-2 rounded-full ${
+                    chainId === ARBITRUM_ONE_CHAIN_ID || (!isFork && (!chainId || chainId === 42161))
+                      ? 'bg-[#00F076]'
+                      : chainId === ANVIL_CHAIN_ID
+                      ? 'bg-[#FFE600]'
+                      : 'bg-[#FF3366]'
+                  }`}
+                />
+                <strong className="text-black">
+                  {chainId === ARBITRUM_ONE_CHAIN_ID || (!isFork && (!chainId || chainId === 42161))
+                    ? 'ARBITRUM ONE (42161)'
+                    : chainId === ANVIL_CHAIN_ID
+                    ? 'ANVIL FORK (31337)'
+                    : isFork
+                    ? 'ANVIL FORK'
+                    : 'ARBITRUM ONE'}
+                </strong>
               </span>
             </div>
             </div>
@@ -437,53 +459,24 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
           >
             <div className="flex items-center justify-between pb-3 border-b-2 border-black">
               <h3 className="text-base uppercase font-bold text-black flex items-center gap-2">
-                <span>👤</span> SELECT DEMO ROLE OR WALLET
+                <span>👤</span> {isFork ? 'SELECT DEMO ROLE OR WALLET' : 'CONNECT WEB3 WALLET'}
               </h3>
               <button
                 type="button"
                 onClick={() => setRoleModalOpen(false)}
-                className="h-8 w-8 border border-black flex items-center justify-center font-bold text-sm bg-neutral-100 hover:bg-neutral-200 cursor-pointer"
+                className="h-8 w-8 border-2 border-black flex items-center justify-center font-bold text-sm bg-neutral-100 hover:bg-neutral-200 cursor-pointer shadow-[2px_2px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
               >
                 ✕
               </button>
             </div>
 
             <p className="text-xs text-gray-700 font-medium leading-relaxed">
-              Switch roles to experience Flyte from the perspective of a leveraged perpetual trader, an Aave-earning Aqua LP maker, or an automated keeper.
+              {isFork
+                ? 'Switch roles to experience Flyte from the perspective of a leveraged perpetual trader, an Aave-earning Aqua LP maker, or an automated keeper.'
+                : 'Connect your browser wallet (MetaMask, Rabby, Coinbase Wallet) to trade Attention Market perps, mint continuous yield aUSDC from the faucet, and ship JIT liquidity strategies to 1inch Aqua on Arbitrum One.'}
             </p>
 
             <div className="flex flex-col gap-2.5">
-              {roleList.map((r) => (
-                <div
-                  key={r.id}
-                  onClick={() => {
-                    setRole(r.id as UserRole);
-                    setRoleModalOpen(false);
-                  }}
-                  className={`border-2 border-black p-3.5 flex items-center justify-between cursor-pointer transition-none ${
-                    role === r.id
-                      ? 'bg-[#00E5FF] shadow-[3px_3px_0px_0px_#000000]'
-                      : 'bg-white hover:bg-neutral-100 shadow-[1px_1px_0px_0px_#000000]'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{r.id === 'trader' ? '🍔' : r.id === 'lp' ? '🍇' : '🤡'}</span>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-black">{r.name}</span>
-                        <span className="bg-black text-white text-[10px] font-mono px-1.5 py-0.5 uppercase font-bold">
-                          {r.badge}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-600 font-mono mt-0.5">{r.description}</p>
-                    </div>
-                  </div>
-                  <span className="font-mono text-xs font-bold text-black">
-                    {shortenAddress(r.address)}
-                  </span>
-                </div>
-              ))}
-
               {/* Browser Wallet Option */}
               <div
                 onClick={() => {
@@ -499,12 +492,14 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">🦊</span>
                   <div>
-                    <span className="font-bold text-sm text-black">Injected Browser Wallet</span>
-                    <p className="text-xs text-gray-600 font-mono mt-0.5">Connect MetaMask, Rabby, or Coinbase Wallet</p>
+                    <span className="font-bold text-sm text-black">Browser Wallet (MetaMask / Rabby)</span>
+                    <p className="text-xs text-gray-600 font-mono mt-0.5">
+                      {role === 'browser' && account ? 'Connected & Active on Arbitrum One' : 'Connect MetaMask, Rabby, or Coinbase'}
+                    </p>
                   </div>
                 </div>
                 <span className="font-mono text-xs font-bold text-black">
-                  {account ? shortenAddress(account) : 'Disconnected'}
+                  {role === 'browser' && account ? shortenAddress(account) : 'Connect ↗'}
                 </span>
               </div>
 
@@ -512,13 +507,13 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
               <div className="border border-neutral-300 bg-neutral-50 px-3 py-2 flex items-center justify-between font-mono text-xs">
                 <span className="text-gray-600 font-bold uppercase">Target Network:</span>
                 <span className={`px-2 py-0.5 font-bold border border-black ${
-                  chainId === ARBITRUM_ONE_CHAIN_ID
+                  chainId === ARBITRUM_ONE_CHAIN_ID || (!isFork && (!chainId || chainId === 42161))
                     ? 'bg-[#00F076] text-black'
                     : chainId === ANVIL_CHAIN_ID
                     ? 'bg-[#FFE600] text-black'
                     : 'bg-[#FF3366] text-white'
                 }`}>
-                  {chainId === ARBITRUM_ONE_CHAIN_ID
+                  {chainId === ARBITRUM_ONE_CHAIN_ID || (!isFork && (!chainId || chainId === 42161))
                     ? '● ARBITRUM ONE (42161)'
                     : chainId === ANVIL_CHAIN_ID
                     ? '● ANVIL FORK (31337)'
@@ -539,18 +534,57 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                 <span>⚡</span> Switch Wallet to Arbitrum One (42161)
               </button>
 
-              {/* Optional Anvil button for local developers */}
-              <button
-                type="button"
-                onClick={async () => {
-                  await switchOrAddAnvilNetwork();
-                  setRoleModalOpen(false);
-                }}
-                className="w-full h-9 border-2 border-black bg-neutral-100 hover:bg-neutral-200 text-black font-bold font-mono text-xs uppercase shadow-[1px_1px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none flex items-center justify-center gap-2 cursor-pointer"
-                title="Switch MetaMask to local Anvil network (Chain ID 31337)"
-              >
-                <span>💻</span> Switch to Local Anvil (31337)
-              </button>
+              {/* Only show local Anvil demo personas and switcher when running on local Anvil fork */}
+              {isFork && (
+                <>
+                  <div className="border-t-2 border-black my-1 pt-2 font-mono text-xs text-gray-500 font-bold uppercase">
+                    Local Anvil Personas:
+                  </div>
+                  {roleList.map((r) => (
+                    <div
+                      key={r.id}
+                      onClick={() => {
+                        setRole(r.id as UserRole);
+                        setRoleModalOpen(false);
+                      }}
+                      className={`border-2 border-black p-3.5 flex items-center justify-between cursor-pointer transition-none ${
+                        role === r.id
+                          ? 'bg-[#00E5FF] shadow-[3px_3px_0px_0px_#000000]'
+                          : 'bg-white hover:bg-neutral-100 shadow-[1px_1px_0px_0px_#000000]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{r.id === 'trader' ? '🍔' : r.id === 'lp' ? '🍇' : '🤡'}</span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm text-black">{r.name}</span>
+                            <span className="bg-black text-white text-[10px] font-mono px-1.5 py-0.5 uppercase font-bold">
+                              {r.badge}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-600 font-mono mt-0.5">{r.description}</p>
+                        </div>
+                      </div>
+                      <span className="font-mono text-xs font-bold text-black">
+                        {shortenAddress(r.address)}
+                      </span>
+                    </div>
+                  ))}
+
+                  {/* Optional Anvil button for local developers */}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await switchOrAddAnvilNetwork();
+                      setRoleModalOpen(false);
+                    }}
+                    className="w-full h-9 border-2 border-black bg-neutral-100 hover:bg-neutral-200 text-black font-bold font-mono text-xs uppercase shadow-[1px_1px_0px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none flex items-center justify-center gap-2 cursor-pointer mt-1"
+                    title="Switch MetaMask to local Anvil network (Chain ID 31337)"
+                  >
+                    <span>💻</span> Switch to Local Anvil (31337)
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

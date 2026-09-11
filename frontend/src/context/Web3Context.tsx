@@ -176,7 +176,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
             setAccount(addr);
             setChainId(Number(network.chainId));
             setBlockNumber(block);
-            setIsFork(Number(network.chainId) === ANVIL_CHAIN_ID || Number(network.chainId) === ARBITRUM_ONE_CHAIN_ID);
+            setIsFork(Number(network.chainId) === ANVIL_CHAIN_ID);
           }
         } else {
           // Check if local Anvil fork is running; otherwise fallback seamlessly to Arbitrum One
