@@ -623,7 +623,7 @@ export const SharedCoverage: React.FC = () => {
 
                     {/* Position */}
                     <td className="py-3 px-3 border-r border-black font-bold text-black">
-                      BTC/USD #{log.positionId}
+                      ROBOTS/USD #{log.positionId}
                     </td>
 
                     {/* LP Maker */}

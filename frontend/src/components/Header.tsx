@@ -249,7 +249,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
               {/* Streamlined Market Ticker Pill */}
               <div className="hidden sm:flex items-center border-2 border-black bg-white h-10 shadow-[2px_2px_0px_0px_#000000]">
                 <span className="px-3 font-mono text-xs font-bold text-black border-r-2 border-black uppercase tracking-wider h-full flex items-center">
-                  {selectedMarket || 'BTC/USD'}
+                  {selectedMarket || 'ROBOTS/USD'}
                 </span>
                 <span className="px-3 font-mono text-xs font-extrabold bg-[#00F076] text-black h-full flex items-center border-r-2 border-black">
                   {formattedPrice}

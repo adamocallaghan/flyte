@@ -28,6 +28,8 @@ interface MonitoredPosition {
   hoursRemaining?: number;
   keeperRewardEst: number;
   marginRatio: number;
+  marketId?: string;
+  marketSymbol?: string;
 }
 
 export const KeeperConsole: React.FC = () => {
@@ -41,7 +43,7 @@ export const KeeperConsole: React.FC = () => {
     refreshBalances,
   } = useWeb3();
 
-  const { btcPrice, refreshMarketStats } = useMarket();
+  const { btcPrice, currentMarket, availableMarkets, allMarketHistories, refreshMarketStats } = useMarket();
 
   // Active keeper address: injected MetaMask when connected as browser, else Ronald
   const activeKeeper = (role === 'browser' && account)
@@ -86,8 +88,24 @@ export const KeeperConsole: React.FC = () => {
             const lpMargin = parseFloat(ethers.formatUnits(pos.lpMargin, 6));
             const lastFunding = Number(pos.lastFundingTimestamp);
 
-            // Real-time PnL
-            const priceDelta = pos.isLong ? btcPrice - entryPrice : entryPrice - btcPrice;
+            // Match position to actual market based on entry price
+            let matchedMarket = availableMarkets[0];
+            let minDiff = Infinity;
+            for (const m of availableMarkets) {
+              const diff = Math.abs(entryPrice - m.basePrice);
+              if (diff < minDiff) {
+                minDiff = diff;
+                matchedMarket = m;
+              }
+            }
+
+            const latestReport = allMarketHistories[matchedMarket.id]?.length
+              ? allMarketHistories[matchedMarket.id][allMarketHistories[matchedMarket.id].length - 1].indexPrice
+              : matchedMarket.basePrice;
+            const markPrice = matchedMarket.id === currentMarket.id ? btcPrice : latestReport;
+
+            // Real-time PnL & Margin Health
+            const priceDelta = pos.isLong ? markPrice - entryPrice : entryPrice - markPrice;
             const pnl = (notional * priceDelta) / entryPrice;
             const remainingMargin = traderMargin + pnl;
             const marginRatio = (remainingMargin / notional) * 100;
@@ -120,6 +138,8 @@ export const KeeperConsole: React.FC = () => {
               hoursRemaining,
               keeperRewardEst: keeperReward,
               marginRatio,
+              marketId: matchedMarket.id,
+              marketSymbol: matchedMarket.symbol,
             });
           }
         } catch {}
@@ -443,7 +463,7 @@ export const KeeperConsole: React.FC = () => {
                         >
                           {pos.isLong ? 'LONG' : 'SHORT'}
                         </span>
-                        <span className="font-bold text-black">BTC #{pos.id}</span>
+                        <span className="font-bold text-black">{pos.marketId || "ROBOTS/USD"} #{pos.id}</span>
                       </div>
                     </td>
 
