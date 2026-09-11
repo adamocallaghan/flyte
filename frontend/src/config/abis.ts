@@ -1982,6 +1982,40 @@ export const ATTENTION_ORACLE_ABI = [
     "type": "error",
     "name": "ZeroAddress",
     "inputs": []
+  },
+  {
+    "type": "function",
+    "name": "getHistoryLength",
+    "inputs": [
+      { "name": "marketId", "type": "string", "internalType": "string" }
+    ],
+    "outputs": [
+      { "name": "", "type": "uint256", "internalType": "uint256" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getHistoricalReports",
+    "inputs": [
+      { "name": "marketId", "type": "string", "internalType": "string" },
+      { "name": "limit", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple[]",
+        "internalType": "struct AttentionOracle.HistoricalReport[]",
+        "components": [
+          { "name": "timestamp", "type": "uint256", "internalType": "uint256" },
+          { "name": "indexPrice", "type": "uint256", "internalType": "uint256" },
+          { "name": "sentimentScore", "type": "int256", "internalType": "int256" },
+          { "name": "socialVelocity", "type": "uint256", "internalType": "uint256" },
+          { "name": "newsMentions24h", "type": "uint256", "internalType": "uint256" }
+        ]
+      }
+    ],
+    "stateMutability": "view"
   }
 ] as const;
 

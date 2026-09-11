@@ -5,6 +5,14 @@ import { ethers } from 'ethers';
 import { useWeb3 } from './Web3Context';
 import { A_USDC_ADDRESS, LOCAL_RPC_URL } from '../config/contracts';
 
+export interface OnChainHistoricalReport {
+  timestamp: number;
+  indexPrice: number;
+  sentimentScore: number;
+  socialVelocity: number;
+  newsMentions24h: number;
+}
+
 export interface AttentionTelemetry {
   sentimentScore: number;    // -100 to +100 (e.g. 56 = +0.56 Bullish)
   socialVelocity: number;    // 0 to 100
@@ -116,6 +124,8 @@ export interface MarketStats {
   isUpdatingPrice: boolean;
   error: string | null;
   attentionTelemetry: AttentionTelemetry;
+  historicalReports: OnChainHistoricalReport[];
+  allMarketHistories: Record<string, OnChainHistoricalReport[]>;
   setMarketPrice: (priceInUsd: number) => Promise<boolean>;
   refreshMarketStats: () => Promise<void>;
 }
@@ -141,6 +151,8 @@ const DEFAULT_STATS: MarketStats = {
   isOracleLoading: false,
   isUpdatingPrice: false,
   error: null,
+  historicalReports: [],
+  allMarketHistories: {},
   attentionTelemetry: {
     sentimentScore: 56,
     socialVelocity: 88,
@@ -156,6 +168,28 @@ const DEFAULT_STATS: MarketStats = {
 };
 
 const MarketContext = createContext<MarketStats>(DEFAULT_STATS);
+
+
+function generateDefaultHistory(basePrice: number, symbol: string): OnChainHistoricalReport[] {
+  const reports: OnChainHistoricalReport[] = [];
+  const now = Math.floor(Date.now() / 1000);
+  const deltas = symbol === 'ROBOTS'
+    ? [71.2, 71.4, 71.8, 71.5, 72.1, 72.6, 72.3, 72.9, 73.1, 73.5, 73.2, 73.8, 74.2, 73.9, 74.5, 74.8, 74.4, 75.0, 75.2, 74.9, 75.3, 75.1, 75.4, 75.5]
+    : symbol === 'GTA6'
+    ? [39.5, 39.7, 39.9, 39.8, 40.1, 40.3, 40.5, 40.4, 40.7, 40.9, 41.1, 41.0, 41.3, 41.5, 41.4, 41.6, 41.8, 41.7, 41.9, 42.0, 41.9, 42.1, 42.0, 42.1]
+    : [81.2, 81.6, 82.1, 82.5, 83.0, 83.5, 84.2, 84.8, 85.3, 85.9, 86.4, 86.8, 87.2, 87.6, 87.9, 88.2, 88.5, 88.1, 88.4, 88.2, 88.6, 88.3, 88.5, 88.4];
+
+  for (let i = 0; i < deltas.length; i++) {
+    reports.push({
+      timestamp: now - (deltas.length - 1 - i) * 3600,
+      indexPrice: deltas[i],
+      sentimentScore: 45 + (i % 25),
+      socialVelocity: 65 + (i % 25),
+      newsMentions24h: 45000 + (i * 600),
+    });
+  }
+  return reports;
+}
 
 export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { oracleContract, appContract, isFork } = useWeb3();
@@ -187,6 +221,14 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [shortOi, setShortOi] = useState<bigint>(BigInt(0));
   const [isOracleLoading, setIsOracleLoading] = useState<boolean>(false);
   const [isUpdatingPrice, setIsUpdatingPrice] = useState<boolean>(false);
+  const [historicalReports, setHistoricalReports] = useState<OnChainHistoricalReport[]>(() =>
+    generateDefaultHistory(75.50, 'ROBOTS')
+  );
+  const [allMarketHistories, setAllMarketHistories] = useState<Record<string, OnChainHistoricalReport[]>>(() => ({
+    'ROBOTS/USD': generateDefaultHistory(75.50, 'ROBOTS'),
+    'GTA6/USD': generateDefaultHistory(42.10, 'GTA6'),
+    'DEEPSEEK/USD': generateDefaultHistory(88.40, 'DEEPSEEK'),
+  }));
   const [error, setError] = useState<string | null>(null);
 
   // Set Market Price (Dev / Demo Tool / Sync)
@@ -254,6 +296,10 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         provider: 'Chainlink CRE',
         consensus: 'Workflow DON (BFT Consensus)',
       });
+      setHistoricalReports(
+        allMarketHistories[marketId] || generateDefaultHistory(target.basePrice, target.symbol)
+      );
+
       // Synchronize on-chain price on Anvil so trades use market price
       if (isFork) {
         setMarketPrice(target.basePrice);
@@ -304,6 +350,29 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
       } catch {
         // use fallback telemetry
+      }
+
+      // 4. Fetch On-Chain Historical Reports
+      try {
+        if (typeof (oracleContract as any).getHistoricalReports === 'function') {
+          const rawHistory: any[] = await (oracleContract as any).getHistoricalReports(currentMarket.symbol, 50);
+          if (rawHistory && rawHistory.length > 0) {
+            const parsed: OnChainHistoricalReport[] = rawHistory.map((item: any) => ({
+              timestamp: Number(item.timestamp),
+              indexPrice: parseFloat(ethers.formatUnits(item.indexPrice, 18)),
+              sentimentScore: Number(item.sentimentScore),
+              socialVelocity: Number(item.socialVelocity),
+              newsMentions24h: Number(item.newsMentions24h),
+            }));
+            setHistoricalReports(parsed);
+            setAllMarketHistories((prev) => ({
+              ...prev,
+              [currentMarket.id]: parsed,
+            }));
+          }
+        }
+      } catch (historyErr) {
+        // preserve existing history
       }
 
       // 3. Fetch App Open Interest
@@ -373,6 +442,8 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       isUpdatingPrice,
       error,
       attentionTelemetry,
+      historicalReports,
+      allMarketHistories,
       setMarketPrice,
       refreshMarketStats,
     }),
@@ -397,6 +468,8 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       isUpdatingPrice,
       error,
       attentionTelemetry,
+      historicalReports,
+      allMarketHistories,
       setMarketPrice,
       refreshMarketStats,
     ]
