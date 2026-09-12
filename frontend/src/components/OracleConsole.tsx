@@ -41,12 +41,15 @@ export const OracleConsole: React.FC = () => {
     const targetId = activeFilter === 'CURRENT' ? currentMarket.id : activeFilter;
     const targetMarket = availableMarkets.find((m) => m.id === targetId) || currentMarket;
     const reports = allMarketHistories[targetId] || historicalReports || [];
-    return reports.map((r) => ({
-      ...r,
-      marketId: targetMarket.symbol,
-      marketIcon: targetMarket.icon,
-      marketName: targetMarket.name,
-    }));
+    return reports
+      .slice()
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .map((r) => ({
+        ...r,
+        marketId: targetMarket.symbol,
+        marketIcon: targetMarket.icon,
+        marketName: targetMarket.name,
+      }));
   }, [activeFilter, currentMarket, availableMarkets, allMarketHistories, historicalReports]);
 
   // Chart dataset for active single market (chronological order)
@@ -322,7 +325,7 @@ export const OracleConsole: React.FC = () => {
                       fontWeight="bold"
                       textAnchor="middle"
                     >
-                      {new Date(pt.report.timestamp * 1000).getUTCHours()}:00
+                      {String(new Date(pt.report.timestamp * 1000).getUTCHours()).padStart(2, '0')}:{String(new Date(pt.report.timestamp * 1000).getUTCMinutes()).padStart(2, '0')}
                     </text>
                   )}
                 </g>
@@ -414,7 +417,7 @@ export const OracleConsole: React.FC = () => {
             <tbody className="divide-y-2 divide-neutral-200 bg-white">
               {displayReports.map((report, idx) => {
                 const date = new Date(report.timestamp * 1000);
-                const timeStr = `${date.toISOString().slice(0, 10)} ${String(date.getUTCHours()).padStart(2, '0')}:00 UTC`;
+                const timeStr = `${date.toISOString().slice(0, 10)} ${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')} UTC`;
                 const isBull = report.sentimentScore >= 0;
 
                 return (

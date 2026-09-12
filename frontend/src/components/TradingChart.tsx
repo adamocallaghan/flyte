@@ -81,15 +81,17 @@ function generateHistoricalData(currentPrice: number, timeframe: Timeframe, coun
 
 function mapReportsToCandles(reports: OnChainHistoricalReport[], currentPrice: number): CandleData[] {
   if (!reports || reports.length === 0) return [];
+  const sorted = [...reports].sort((a, b) => a.timestamp - b.timestamp);
   const candles: CandleData[] = [];
-  for (let i = 0; i < reports.length; i++) {
-    const r = reports[i];
-    const prevClose = i === 0 ? r.indexPrice * 0.996 : reports[i - 1].indexPrice;
+  for (let i = 0; i < sorted.length; i++) {
+    const r = sorted[i];
+    const prevClose = i === 0 ? r.indexPrice * 0.996 : sorted[i - 1].indexPrice;
     const open = Math.round(prevClose * 100) / 100;
-    const close = Math.round((i === reports.length - 1 ? currentPrice : r.indexPrice) * 100) / 100;
-    const spread = Math.max(0.1, Math.abs(open - close));
-    const high = Math.round((Math.max(open, close) + spread * 0.4 + r.indexPrice * 0.002) * 100) / 100;
-    const low = Math.round((Math.min(open, close) - spread * 0.4 - r.indexPrice * 0.002) * 100) / 100;
+    const isLast = i === sorted.length - 1;
+    const close = Math.round((isLast ? currentPrice : r.indexPrice) * 100) / 100;
+    const spread = Math.max(0.08, Math.abs(open - close));
+    const high = Math.round((Math.max(open, close) + spread * 0.35 + r.indexPrice * 0.002) * 100) / 100;
+    const low = Math.round((Math.min(open, close) - spread * 0.35 - r.indexPrice * 0.002) * 100) / 100;
     const date = new Date(r.timestamp * 1000);
     const hours = String(date.getUTCHours()).padStart(2, '0');
     const mins = String(date.getUTCMinutes()).padStart(2, '0');
@@ -102,7 +104,7 @@ function mapReportsToCandles(reports: OnChainHistoricalReport[], currentPrice: n
       high,
       low,
       close,
-      volume: r.newsMentions24h * 15,
+      volume: (r.newsMentions24h || 50000) * 15,
     });
   }
   return candles;
@@ -110,7 +112,7 @@ function mapReportsToCandles(reports: OnChainHistoricalReport[], currentPrice: n
 
 export const TradingChart: React.FC = () => {
   const { btcPrice, priceChange24h, selectedMarket, historicalReports } = useMarket();
-  const [timeframe, setTimeframe] = useState<Timeframe>('1H');
+  const [timeframe, setTimeframe] = useState<Timeframe>('15m');
   const [chartType, setChartType] = useState<ChartType>('candles');
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
@@ -132,8 +134,20 @@ export const TradingChart: React.FC = () => {
   }, []);
 
   const candles = useMemo(() => {
+    // If we have live on-chain reports from the CRE Attention Oracle, use them for 15m and 1H bars
+    if (historicalReports && historicalReports.length > 0 && (timeframe === '15m' || timeframe === '1H')) {
+      const mapped = mapReportsToCandles(historicalReports, btcPrice);
+      if (mapped.length >= 42) {
+        return mapped.slice(-42);
+      }
+      // Prepend leading synthetic candles transitioning into earliest on-chain report to maintain full chart
+      const needed = 42 - mapped.length;
+      const firstReportPrice = mapped[0].open;
+      const leading = generateHistoricalData(firstReportPrice, timeframe, needed + 1).slice(0, needed);
+      return [...leading, ...mapped];
+    }
     return generateHistoricalData(btcPrice, timeframe, 42);
-  }, [btcPrice, timeframe]);
+  }, [btcPrice, timeframe, historicalReports]);
 
   const activeCandle = hoveredIndex !== null && candles[hoveredIndex] ? candles[hoveredIndex] : candles[candles.length - 1];
   const activePrice = activeCandle ? activeCandle.close : btcPrice;

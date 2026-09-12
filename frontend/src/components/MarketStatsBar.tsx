@@ -18,6 +18,7 @@ export const MarketStatsBar: React.FC = () => {
     longOiUsd,
     shortOiUsd,
     attentionTelemetry,
+    allMarketHistories,
   } = useMarket();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
@@ -105,44 +106,49 @@ export const MarketStatsBar: React.FC = () => {
                   <span className="text-black font-bold">CHAINLINK TEE</span>
                 </div>
                 <div className="flex flex-col py-1">
-                  {availableMarkets.map((market) => (
-                    <button
-                      key={market.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedMarket(market.id);
-                        setIsDropdownOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between p-2.5 hover:bg-neutral-100 border-b border-neutral-200 last:border-b-0 cursor-pointer text-left transition-colors ${
-                        selectedMarket === market.id ? 'bg-[#00E5FF]/20 font-bold' : ''
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className="w-8 h-8 bg-black text-[#FFE600] border border-black flex items-center justify-center font-bold text-sm shrink-0">
-                          {market.icon}
-                        </span>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-xs text-black">{market.name}</span>
-                            <span className="font-mono text-[9px] px-1 border border-black bg-neutral-100 uppercase">
-                              {market.category}
+                  {availableMarkets.map((market) => {
+                    const latestReport = allMarketHistories[market.id]?.slice(-1)[0] || allMarketHistories[market.symbol]?.slice(-1)[0];
+                    const livePrice = (selectedMarket === market.id ? btcPrice : null) ?? latestReport?.indexPrice ?? market.basePrice;
+
+                    return (
+                      <button
+                        key={market.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedMarket(market.id);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between p-2.5 hover:bg-neutral-100 border-b border-neutral-200 last:border-b-0 cursor-pointer text-left transition-colors ${
+                          selectedMarket === market.id ? 'bg-[#00E5FF]/20 font-bold' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-8 h-8 bg-black text-[#FFE600] border border-black flex items-center justify-center font-bold text-sm shrink-0">
+                            {market.icon}
+                          </span>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-xs text-black">{market.name}</span>
+                              <span className="font-mono text-[9px] px-1 border border-black bg-neutral-100 uppercase">
+                                {market.category}
+                              </span>
+                            </div>
+                            <span className="block font-mono text-[10px] text-gray-500 truncate max-w-[170px]">
+                              {market.description}
                             </span>
                           </div>
-                          <span className="block font-mono text-[10px] text-gray-500 truncate max-w-[170px]">
-                            {market.description}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="font-mono text-xs font-extrabold text-black block">
+                            ${livePrice < 1000 ? livePrice.toFixed(2) : Math.round(livePrice).toLocaleString()}
+                          </span>
+                          <span className="font-mono text-[9px] text-[#006d32] font-bold">
+                            {market.maxLeverage}
                           </span>
                         </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <span className="font-mono text-xs font-extrabold text-black block">
-                          ${market.basePrice < 1000 ? market.basePrice.toFixed(2) : Math.round(market.basePrice).toLocaleString()}
-                        </span>
-                        <span className="font-mono text-[9px] text-[#006d32] font-bold">
-                          {market.maxLeverage}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}

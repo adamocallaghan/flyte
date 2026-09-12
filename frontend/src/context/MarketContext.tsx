@@ -333,24 +333,39 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setPriceChange24h(pctDelta);
         }
 
-        // 3. Fetch On-Chain Historical Reports
+        // 3. Fetch On-Chain Historical Reports across all markets in parallel
         try {
           if (typeof (oracleContract as any).getHistoricalReports === 'function') {
-            const rawHistory: any[] = await (oracleContract as any).getHistoricalReports(activeMkt.symbol, 50);
-            if (rawHistory && rawHistory.length > 0) {
-              const parsed: OnChainHistoricalReport[] = rawHistory.map((item: any) => ({
-                timestamp: Number(item.timestamp),
-                indexPrice: parseFloat(ethers.formatUnits(item.indexPrice, 18)),
-                sentimentScore: Number(item.sentimentScore),
-                socialVelocity: Number(item.socialVelocity),
-                newsMentions24h: Number(item.newsMentions24h),
-              }));
-              setHistoricalReports(parsed);
-              setAllMarketHistories((prev) => ({
-                ...prev,
-                [activeMkt.id]: parsed,
-              }));
-            }
+            const historyPromises = AVAILABLE_MARKETS.map(async (m) => {
+              try {
+                const rawHistory: any[] = await (oracleContract as any).getHistoricalReports(m.symbol, 50);
+                if (rawHistory && rawHistory.length > 0) {
+                  const parsed: OnChainHistoricalReport[] = rawHistory.map((item: any) => ({
+                    timestamp: Number(item.timestamp),
+                    indexPrice: parseFloat(ethers.formatUnits(item.indexPrice, 18)),
+                    sentimentScore: Number(item.sentimentScore),
+                    socialVelocity: Number(item.socialVelocity),
+                    newsMentions24h: Number(item.newsMentions24h),
+                  }));
+                  return { id: m.id, parsed };
+                }
+              } catch {}
+              return null;
+            });
+
+            const results = await Promise.all(historyPromises);
+            setAllMarketHistories((prev) => {
+              const updated = { ...prev };
+              for (const res of results) {
+                if (res) {
+                  updated[res.id] = res.parsed;
+                  if (res.id === activeMkt.id) {
+                    setHistoricalReports(res.parsed);
+                  }
+                }
+              }
+              return updated;
+            });
           }
         } catch (historyErr) {
           // preserve existing history
@@ -394,20 +409,21 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         consensus: 'Workflow DON (BFT Consensus)',
       });
 
-      // Synchronize cached history immediately
+      // Synchronize cached history immediately and set latest real price
       setAllMarketHistories((prev) => {
         const cached = prev[marketId];
         if (cached && cached.length > 0) {
           setHistoricalReports(cached);
+          const latestPrice = cached[cached.length - 1].indexPrice;
+          setBtcPrice(latestPrice);
+          setRawBtcPrice(ethers.parseUnits(latestPrice.toFixed(2), 18));
         } else {
           setHistoricalReports(generateDefaultHistory(target.basePrice, target.symbol));
+          setBtcPrice(target.basePrice);
+          setRawBtcPrice(ethers.parseUnits(target.basePrice.toFixed(2), 18));
         }
         return prev;
       });
-
-      // Set target price immediately to eliminate any flash or revert
-      setBtcPrice(target.basePrice);
-      setRawBtcPrice(ethers.parseUnits(target.basePrice.toFixed(2), 18));
       setPriceDirection('neutral');
       setPriceChange24h(0);
 
