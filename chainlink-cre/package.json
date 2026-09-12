@@ -1,0 +1,10 @@
+{
+  "name": "flyte-chainlink-cre",
+  "version": "1.0.0",
+  "description": "Chainlink CRE Confidential Workflow & Arbitrum Oracle Bridge for Flyte",
+  "scripts": {
+    "oracle:run": "node simulate-and-report.js --once",
+    "oracle:watch": "node simulate-and-report.js --interval 15",
+    "oracle:backfill": "node simulate-and-report.js --runs 8"
+  }
+}
